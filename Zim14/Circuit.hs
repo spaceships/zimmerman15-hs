@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Zim14.Circuit where
 
@@ -30,32 +31,40 @@ args (Mul   x y) = [x,y]
 args (Const _ _) = []
 args (Input _  ) = []
 
-evalOp :: Op -> [Int] -> Int
-evalOp (Add _ _) [x,y] = x + y
-evalOp (Sub _ _) [x,y] = x - y
-evalOp (Mul _ _) [x,y] = x * y
-evalOp (Const _ x)  [] = x
-evalOp (Input _)     _ = error "evalOp doesn't know how to evaluate input"
-
-evalCirc :: Circ -> [Int] -> Int
-evalCirc (Circ {..}) inps = evalState (eval outRef) known
+foldCirc :: (Op -> [a] -> a) -> [a] -> Circ -> a
+foldCirc f inps (Circ {..}) = evalState (eval outRef) known
   where
     known = M.fromList $ map (\(id, ref) -> (ref, inps !! id)) (M.toList inpRefs)
 
-    eval :: Ref -> State (M.Map Ref Int) Int
     eval ref = do
         known <- get
         case M.lookup ref known of
-            Just result -> return result
+            Just val -> return val
             Nothing -> do
                 let op = look ref
-                val <- evalOp op <$> mapM eval (args op)
+                argVals <- mapM eval (args op)
+                let val = f op argVals
                 put $ M.insert ref val known
                 return val
 
     look ref = case M.lookup ref refMap of
         Nothing -> error ("unknown ref " ++ show ref ++ "!")
         Just op -> op
+
+evalCirc :: Circ -> [Int] -> Int
+evalCirc c xs = if foldCirc evalOp xs c /= 0 then 1 else 0 -- this is how the tests work
+  where
+    evalOp (Add _ _) [x,y] = x + y
+    evalOp (Sub _ _) [x,y] = x - y
+    evalOp (Mul _ _) [x,y] = x * y
+    evalOp (Const _ x)  [] = x
+
+circDepth :: Circ -> Int
+circDepth = foldCirc f [0..]
+  where
+    f (Input _  ) [] = 0
+    f (Const _ _) [] = 0
+    f _           xs = maximum xs + 1
 
 ensureCirc :: Circ -> [TestCase] -> Bool
 ensureCirc c ts = all ensure (zip [0..] ts)
