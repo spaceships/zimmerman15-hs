@@ -31,9 +31,11 @@ args (Mul   x y) = [x,y]
 args (Const _ _) = []
 args (Input _  ) = []
 
+-- inps are big endian
 foldCirc :: (Op -> [a] -> a) -> [a] -> Circ -> a
-foldCirc f inps (Circ {..}) = evalState (eval outRef) known
+foldCirc f inps_ (Circ {..}) = evalState (eval outRef) known
   where
+    inps  = reverse inps_
     known = M.fromList $ map (\(id, ref) -> (ref, inps !! id)) (M.toList inpRefs)
 
     eval ref = do
