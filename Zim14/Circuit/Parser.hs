@@ -46,12 +46,10 @@ parseTest = do
     inps <- many (oneOf ['0','1'])
     spaces
     out <- oneOf ['0','1']
-    let inp = map toBool inps
-        res = toBool out
+    let inp = map (read . (:[])) inps
+        res = (read . (:[])) out
     addTest (inp, res)
     endLine
-  where
-    toBool c = (read [c] :: Int) > 0
 
 parseInput :: ParseCirc ()
 parseInput = do
