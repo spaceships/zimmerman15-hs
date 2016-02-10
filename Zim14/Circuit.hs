@@ -62,7 +62,7 @@ evalCirc c xs = if foldCirc evalOp xs c /= 0 then 1 else 0 -- this is how the te
     evalOp (Const _ x)  [] = x
 
 circDepth :: Circ -> Int
-circDepth = foldCirc f [0..]
+circDepth c = foldCirc f (replicate (M.size (inpRefs c)) 0) c
   where
     f (Input _  ) [] = 0
     f (Const _ _) [] = 0
