@@ -38,23 +38,15 @@ depth c = foldCirc f (replicate (ninputs c) 0) c
     f (Const _ _) [] = 0
     f _           xs = maximum xs + 1
 
-depth :: Circ -> Int
-depth c = foldCirc f (replicate (ninputs c) 0) c
-  where
-    f (Const _ _) [] = 0
-    f _           xs = maximum xs + 1
-
 degree :: Circ -> Op -> Int
 degree c z = foldCirc f [] c
   where
     eq (Input x) (Input y) = x == y
-    eq (Input _) _         = False
     eq (Const _ _) (Const _ _) = True
-    eq (Const _ _) _           = False
     eq _ _ = False
 
-    f (Add _ _) [x,y] = max x y
-    f (Sub _ _) [x,y] = max x y
+    f (Add _ _) [x,y] = x + y
+    f (Sub _ _) [x,y] = x + y
     f (Mul _ _) [x,y] = x + y
     f x [] = if eq x z then 1 else 0
 
