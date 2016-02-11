@@ -24,6 +24,69 @@ data Circ = Circ { outRef    :: Ref
 
 type TestCase = ([Int], Int)
 
+eval :: Circ -> [Int] -> Int
+eval c xs = if foldCirc evalOp xs c /= 0 then 1 else 0 -- this is how the tests work
+  where
+    evalOp (Add _ _) [x,y] = x + y
+    evalOp (Sub _ _) [x,y] = x - y
+    evalOp (Mul _ _) [x,y] = x * y
+    evalOp (Const _ x)  [] = x
+
+depth :: Circ -> Int
+depth c = foldCirc f (replicate (ninputs c) 0) c
+  where
+    f (Const _ _) [] = 0
+    f _           xs = maximum xs + 1
+
+depth :: Circ -> Int
+depth c = foldCirc f (replicate (ninputs c) 0) c
+  where
+    f (Const _ _) [] = 0
+    f _           xs = maximum xs + 1
+
+degree :: Circ -> Op -> Int
+degree c z = foldCirc f [] c
+  where
+    eq (Input x) (Input y) = x == y
+    eq (Input _) _         = False
+    eq (Const _ _) (Const _ _) = True
+    eq (Const _ _) _           = False
+    eq _ _ = False
+
+    f (Add _ _) [x,y] = max x y
+    f (Sub _ _) [x,y] = max x y
+    f (Mul _ _) [x,y] = x + y
+    f x [] = if eq x z then 1 else 0
+
+ensure :: Circ -> [TestCase] -> Bool
+ensure c ts = all ensure (zip [0..] ts)
+  where
+    ensure (i, (inps, res)) = if eval c (reverse inps) == res then True
+                              else error ("test " ++ show i ++ " failed: " ++
+                                          concatMap show inps ++ " /= " ++ show res)
+
+-- inps are little endian
+foldCirc :: (Op -> [a] -> a) -> [a] -> Circ -> a
+foldCirc f inps (Circ {..}) = evalState (eval outRef) known
+  where
+    known = M.fromList $ map (\(id, val) -> (look id inpRefs, val)) (zip [0..] inps)
+    eval ref = do
+        known <- get
+        case M.lookup ref known of
+            Just val -> return val
+            Nothing -> do
+                let op = look ref refMap
+                argVals <- mapM eval (args op)
+                let val = f op argVals
+                put $ M.insert ref val known
+                return val
+    look x m = case M.lookup x m of
+        Nothing -> error ("unknown ref " ++ show x ++ "!")
+        Just op -> op
+
+ninputs :: Circ -> Int
+ninputs = M.size . inpRefs
+
 args :: Op -> [Ref]
 args (Add   x y) = [x,y]
 args (Sub   x y) = [x,y]
@@ -31,46 +94,3 @@ args (Mul   x y) = [x,y]
 args (Const _ _) = []
 args (Input _  ) = []
 
--- inps are big endian
-foldCirc :: (Op -> [a] -> a) -> [a] -> Circ -> a
-foldCirc f inps_ (Circ {..}) = evalState (eval outRef) known
-  where
-    inps  = reverse inps_
-    known = M.fromList $ map (\(id, ref) -> (ref, inps !! id)) (M.toList inpRefs)
-
-    eval ref = do
-        known <- get
-        case M.lookup ref known of
-            Just val -> return val
-            Nothing -> do
-                let op = look ref
-                argVals <- mapM eval (args op)
-                let val = f op argVals
-                put $ M.insert ref val known
-                return val
-
-    look ref = case M.lookup ref refMap of
-        Nothing -> error ("unknown ref " ++ show ref ++ "!")
-        Just op -> op
-
-evalCirc :: Circ -> [Int] -> Int
-evalCirc c xs = if foldCirc evalOp xs c /= 0 then 1 else 0 -- this is how the tests work
-  where
-    evalOp (Add _ _) [x,y] = x + y
-    evalOp (Sub _ _) [x,y] = x - y
-    evalOp (Mul _ _) [x,y] = x * y
-    evalOp (Const _ x)  [] = x
-
-circDepth :: Circ -> Int
-circDepth c = foldCirc f (replicate (M.size (inpRefs c)) 0) c
-  where
-    f (Input _  ) [] = 0
-    f (Const _ _) [] = 0
-    f _           xs = maximum xs + 1
-
-ensureCirc :: Circ -> [TestCase] -> Bool
-ensureCirc c ts = all ensure (zip [0..] ts)
-  where
-    ensure (i, (inps, res)) = if evalCirc c inps == res then True
-                              else error ("test " ++ show i ++ " failed: " ++
-                                          concatMap show inps ++ " /= " ++ show res)
