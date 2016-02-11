@@ -28,6 +28,7 @@ executable zimmerman14
                         , bimap
                         , containers
                         , mtl
+    ghc-options:        -threaded -O2 -prof -fprof-auto "-with-rtsopts=-N4 -p"
 
   -- hs-source-dirs:
 

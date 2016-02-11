@@ -16,15 +16,15 @@ data Op = Add Ref Ref
         | Input ID
         deriving (Eq, Ord, Show)
 
-data Circ = Circ { outRef    :: Ref
-                 , inpRefs   :: M.Map ID Ref
-                 , constRefs :: M.Map ID Ref
-                 , refMap    :: M.Map Ref Op
-                 } deriving (Show)
+data Circuit = Circuit { outRef    :: Ref
+                       , inpRefs   :: M.Map ID Ref
+                       , constRefs :: M.Map ID Ref
+                       , refMap    :: M.Map Ref Op
+                       } deriving (Show)
 
 type TestCase = ([Int], Int)
 
-eval :: Circ -> [Int] -> Int
+eval :: Circuit -> [Int] -> Int
 eval c xs = if foldCirc evalOp xs c /= 0 then 1 else 0 -- this is how the tests work
   where
     evalOp (Add _ _) [x,y] = x + y
@@ -32,13 +32,13 @@ eval c xs = if foldCirc evalOp xs c /= 0 then 1 else 0 -- this is how the tests 
     evalOp (Mul _ _) [x,y] = x * y
     evalOp (Const _ x)  [] = x
 
-depth :: Circ -> Int
+depth :: Circuit -> Int
 depth c = foldCirc f (replicate (ninputs c) 0) c
   where
     f (Const _ _) [] = 0
     f _           xs = maximum xs + 1
 
-degree :: Circ -> Op -> Int
+degree :: Circuit -> Op -> Int
 degree c z = foldCirc f [] c
   where
     eq (Input x) (Input y) = x == y
@@ -50,7 +50,7 @@ degree c z = foldCirc f [] c
     f (Mul _ _) [x,y] = x + y
     f x [] = if eq x z then 1 else 0
 
-ensure :: Circ -> [TestCase] -> Bool
+ensure :: Circuit -> [TestCase] -> Bool
 ensure c ts = all ensure (zip [0..] ts)
   where
     ensure (i, (inps, res)) = if eval c (reverse inps) == res then True
@@ -58,8 +58,8 @@ ensure c ts = all ensure (zip [0..] ts)
                                           concatMap show inps ++ " /= " ++ show res)
 
 -- inps are little endian
-foldCirc :: (Op -> [a] -> a) -> [a] -> Circ -> a
-foldCirc f inps (Circ {..}) = evalState (eval outRef) known
+foldCirc :: (Op -> [a] -> a) -> [a] -> Circuit -> a
+foldCirc f inps (Circuit {..}) = evalState (eval outRef) known
   where
     known = M.fromList $ map (\(id, val) -> (look id inpRefs, val)) (zip [0..] inps)
     eval ref = do
@@ -76,7 +76,7 @@ foldCirc f inps (Circ {..}) = evalState (eval outRef) known
         Nothing -> error ("unknown ref " ++ show x ++ "!")
         Just op -> op
 
-ninputs :: Circ -> Int
+ninputs :: Circuit -> Int
 ninputs = M.size . inpRefs
 
 args :: Op -> [Ref]

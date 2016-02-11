@@ -9,21 +9,21 @@ import Control.Monad (when)
 import Text.Parsec hiding (spaces, parseTest)
 import qualified Data.Map as M
 
-type ParseCirc = Parsec String (Circ, [TestCase])
+type ParseCirc = Parsec String (Circuit, [TestCase])
 
-getCirc :: ParseCirc Circ
+getCirc :: ParseCirc Circuit
 getCirc = fst <$> getState
 
 getTests :: ParseCirc [TestCase]
 getTests = snd <$> getState
 
-modifyCirc :: (Circ -> Circ) -> ParseCirc ()
+modifyCirc :: (Circuit -> Circuit) -> ParseCirc ()
 modifyCirc = modifyState . first
 
 addTest :: TestCase -> ParseCirc ()
 addTest t = modifyState $ second (t :)
 
-parseCirc :: String -> (Circ, [TestCase])
+parseCirc :: String -> (Circuit, [TestCase])
 parseCirc s = case runParser (circParser >> getState) (emptyCirc, []) "" s of
     Left err      -> error (show err)
     Right (c, ts) -> (c, reverse ts)
@@ -31,7 +31,7 @@ parseCirc s = case runParser (circParser >> getState) (emptyCirc, []) "" s of
     circParser = init >> rest >> eof
     init = many $ choice [parseParam, parseTest]
     rest = many $ choice [try parseGate, try parseInput]
-    emptyCirc  = Circ (-1) M.empty M.empty M.empty
+    emptyCirc = Circuit (-1) M.empty M.empty M.empty
 
 parseParam :: ParseCirc ()
 parseParam = do
