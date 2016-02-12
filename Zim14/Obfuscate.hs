@@ -24,10 +24,11 @@ data Obfuscation = Obfuscation { circ     :: Circuit
 
 obfuscate :: Int -> Circuit -> IO Obfuscation
 obfuscate λ c = do
-    let d         = depth c
-        n         = ninputs c
-        m         = nconsts c
-        (ix, nzs) = indexer n
+    let d = depth c
+        n = ninputs c
+        m = nconsts c
+        ix  = indexer n
+        nzs = nindices n
         ydeg = degree c (Const (-1))
         xdeg = pmap (degree c . Input) [0..n-1]
         pows = topLevelIndex ix n ydeg xdeg
@@ -61,22 +62,22 @@ obfuscate λ c = do
 encodeXs :: Indexer -> Int -> [Integer] -> ([Element], [Element])
 encodeXs ix n αs = (x0s, x1s)
   where
-    ix0s = [pow1 (xindex ix i False) | i <- [0..n-1]]
-    ix1s = [pow1 (xindex ix i True)  | i <- [0..n-1]]
+    ix0s = [pow1 (ix (SymX i False)) | i <- [0..n-1]]
+    ix1s = [pow1 (ix (SymX i True))  | i <- [0..n-1]]
     x0s  = [encode 0 chk ix | chk <- αs | ix <- ix0s]
     x1s  = [encode 1 chk ix | chk <- αs | ix <- ix1s]
 
 encodeUs :: Indexer -> Int -> ([Element], [Element])
 encodeUs ix n = (u0s, u1s)
   where
-    u0s = [encode 1 1 (pow1 (xindex ix i False)) | i <- [0..n-1]]
-    u1s = [encode 1 1 (pow1 (xindex ix i True))  | i <- [0..n-1]]
+    u0s = [encode 1 1 (pow1 (ix (SymX i False))) | i <- [0..n-1]]
+    u1s = [encode 1 1 (pow1 (ix (SymX i True)))  | i <- [0..n-1]]
 
 encodeYs :: Indexer -> [Integer] -> [Integer] -> [Element]
-encodeYs ix ys βs = [encode y chk (pow1 (yindex ix)) | y <- ys | chk <- βs]
+encodeYs ix ys βs = [encode y chk (pow1 (ix SymY)) | y <- ys | chk <- βs]
 
 encodeV :: Indexer -> Element
-encodeV ix = encode 1 1 (pow1 (yindex ix))
+encodeV ix = encode 1 1 (pow1 (ix SymY))
 
 encodeZs :: Indexer -> Int -> [Int]
          -> ([Integer], [Integer])
@@ -87,9 +88,9 @@ encodeZs ix n xdegs (δ0s, δ1s) (γ0s, γ1s) = (zs False, zs True)
     zs b = do
         let (δs, γs) = if b then (δ1s, γ1s) else (δ0s, γ0s)
         (i, xdeg, δ, γ) <- zip4 [0..n-1] xdegs δs γs
-        let xix = pow (xindex ix i (not b)) xdeg
-            wix = pow1 (windex ix i)
-            bc  = indexUnions $ map pow1 (bitCommit ix i b)
+        let xix = pow (ix (SymX i (not b))) xdeg
+            wix = pow1 (ix (SymW i))
+            bc  = pow1 (bitCommit ix i b)
             zix = indexUnions [xix, wix, bc]
         return (encode δ γ zix)
 
@@ -99,31 +100,30 @@ encodeWs ix n (γ0s, γ1s) = (ws False, ws True)
     ws b = do
         let γs = if b then γ1s else γ0s
         (i, γ) <- zip [0..n-1] γs
-        let bc  = indexUnions $ map pow1 (bitCommit ix i b)
-            wix = indexUnion bc (pow1 (windex ix i))
+        let bc  = pow1 (bitCommit ix i b)
+            wix = indexUnion bc (pow1 (ix (SymW i)))
         return (encode 0 γ wix)
 
 encodeCStar :: Indexer -> Int -> [Int] -> Int -> Integer -> Element
 encodeCStar ix n xdegs ydeg cstar_val = encode 0 cstar_val cix
   where
-    yix  = pow (yindex ix) ydeg
+    yix  = pow (ix SymY) ydeg
     rest = indexUnions $ do
         (i, xdeg) <- zip [0..n-1] xdegs
-        let xi0 = pow (xindex ix i False) xdeg
-            xi1 = pow (xindex ix i True)  xdeg
-            zix = pow1 (zindex ix i)
+        let xi0 = pow (ix (SymX i False)) xdeg
+            xi1 = pow (ix (SymX i True))  xdeg
+            zix = pow1 (ix (SymZ i))
         return $ indexUnions [xi0, xi1, zix]
     cix = indexUnion yix rest
-
 
 topLevelIndex :: Indexer -> Int -> Int -> [Int] -> IndexSet
 topLevelIndex ix n ydeg xdegs = indexUnions (yix : xixs ++ zixs ++ wixs ++ sixs)
   where
-    yix  = pow (yindex ix) ydeg
-    xixs = [pow (xindex ix i b) d | i <- [0..n-1]
+    yix  = pow (ix SymY) ydeg
+    xixs = [pow (ix (SymX i b)) d | i <- [0..n-1]
                                   | d <- xdegs
                                   , b <- [False, True]
                                   ]
-    zixs = [ pow1 (zindex ix i) | i <- [0..n-1] ]
-    wixs = [ pow1 (windex ix i) | i <- [0..n-1] ]
-    sixs = map pow1 $ concat [sindices ix i | i <- [0..n-1]]
+    zixs = [ pow1 (ix (SymZ i)) | i <- [0..n-1] ]
+    wixs = [ pow1 (ix (SymW i)) | i <- [0..n-1] ]
+    sixs = map pow1 [sindices n]
