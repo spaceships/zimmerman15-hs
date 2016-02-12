@@ -30,36 +30,36 @@ allIndices n = (nsyms, y ++ xs ++ zs ++ ws ++ ss)
   where
     ix    = indexer n
     nsyms = nindices n
-    y  = ix SymY
-    xs = concat [ix (SymX i b)   | b <- [False, True], i <- [0..n-1]]
-    zs = concat [ix (SymZ i)     | i <- [0..n-1]]
-    ws = concat [ix (SymW i)     | i <- [0..n-1]]
-    ss = concat [ix (SymS i b j) | b <- [False, True], i <- [0..n-1], j <- [0..n-1]]
+    y  = ix IxY
+    xs = concat [ix (IxX i b)   | b <- [False, True], i <- [0..n-1]]
+    zs = concat [ix (IxZ i)     | i <- [0..n-1]]
+    ws = concat [ix (IxW i)     | i <- [0..n-1]]
+    ss = concat [ix (IxS i b j) | b <- [False, True], i <- [0..n-1], j <- [0..n-1]]
 
 prop_xindicesCorrect :: Property
 prop_xindicesCorrect = forAll (choose (1, 128)) $ \n ->
     let ix  = indexer n
-        xs  = concat [ix (SymX i b) | b <- [False, True], i <- [0..n-1]]
+        xs  = concat [ix (IxX i b) | b <- [False, True], i <- [0..n-1]]
         xs' = xindices n
     in S.fromList xs == S.fromList xs'
 
 prop_zindicesCorrect :: Property
 prop_zindicesCorrect = forAll (choose (1, 128)) $ \n ->
     let ix  = indexer n
-        zs  = concat [ix (SymZ i) | i <- [0..n-1]]
+        zs  = concat [ix (IxZ i) | i <- [0..n-1]]
         zs' = zindices n
     in S.fromList zs == S.fromList zs'
 
 prop_windicesCorrect :: Property
 prop_windicesCorrect = forAll (choose (1, 128)) $ \n ->
     let ix  = indexer n
-        ws  = concat [ix (SymW i) | i <- [0..n-1]]
+        ws  = concat [ix (IxW i) | i <- [0..n-1]]
         ws' = windices n
     in S.fromList ws == S.fromList ws'
 
 prop_sindicesCorrect :: Property
 prop_sindicesCorrect = forAll (choose (1, 128)) $ \n ->
     let ix  = indexer n
-        ss  = concat [ix (SymS i b j) | b <- [False, True], i <- [0..n-1], j <- [0..n-1]]
+        ss  = concat [ix (IxS i b j) | b <- [False, True], i <- [0..n-1], j <- [0..n-1]]
         ss' = sindices n
     in S.fromList ss == S.fromList ss'

@@ -4,18 +4,18 @@ import Data.Monoid
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-data FormalSymbol = SymY
-                  | SymX Int Bool
-                  | SymZ Int
-                  | SymW Int
-                  | SymS Int Bool Int
-                  deriving (Show, Eq, Ord)
+data IndexSym = IxY
+              | IxX Int Bool
+              | IxZ Int
+              | IxW Int
+              | IxS Int Bool Int
+              deriving (Show, Eq, Ord)
 
 -- Index is the index of the z_i corresponding to a formal symbol
 type Index = Int
 
 -- Indexer turns formal symbols into Index
-type Indexer = FormalSymbol -> [Index]
+type Indexer = IndexSym -> [Index]
 
 indexer :: Int -> Indexer
 indexer n = ix
@@ -27,19 +27,19 @@ indexer n = ix
 
     szero = nys + nxs + nzs + nws
 
-    ix :: FormalSymbol -> [Index]
-    ix SymY = [0]
-    ix (SymX i b) = [2*i + (if b then 1 else 0) + nys]
-    ix (SymZ i) = [i + nys + nxs]
-    ix (SymW i) = [i + nys + nxs + nzs]
+    ix :: IndexSym -> [Index]
+    ix IxY = [0]
+    ix (IxX i b) = [2*i + (if b then 1 else 0) + nys]
+    ix (IxZ i) = [i + nys + nxs]
+    ix (IxW i) = [i + nys + nxs + nzs]
 
-    ix (SymS i False j) = let z = i*(2*n-1) + szero
-                          in if j == 0
+    ix (IxS i False j) = let z = i*(2*n-1) + szero
+                         in if j == 0
                              then [z]
                              else [z + 2*j - 1, z + 2*j]
 
-    ix (SymS i True j) = let z = i*(2*n-1) + szero
-                         in if j == n-1
+    ix (IxS i True j) = let z = i*(2*n-1) + szero
+                        in if j == n-1
                             then [z + 2*j]
                             else [z + 2*j, z + 2*j+1]
 
@@ -65,9 +65,9 @@ nindices :: Int -> Int
 nindices n = n*(2*n-1) + 4*n + 1
 
 bitCommit :: Indexer -> Int -> Bool -> [Index]
-bitCommit ix i b = ix (SymS i b i)
+bitCommit ix i b = ix (IxS i b i)
 
 bitFill :: Indexer -> Int -> Int -> Bool -> Bool -> [Index]
 bitFill ix i1 i2 b1 b2
-    | i1 < i2   = ix (SymS i1 b1 i2) ++ ix (SymS i2 b2 i1)
+    | i1 < i2   = ix (IxS i1 b1 i2) ++ ix (IxS i2 b2 i1)
     | otherwise = error "[bitFill] i1 >= i2!"
