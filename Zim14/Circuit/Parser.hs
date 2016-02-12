@@ -4,34 +4,46 @@ module Zim14.Circuit.Parser
 
 import Zim14.Circuit
 
-import Control.Arrow (first, second)
 import Control.Monad (when)
 import Text.Parsec hiding (spaces, parseTest)
 import qualified Data.Map as M
 
-type ParseCirc = Parsec String (Circuit, [TestCase])
+data ParseSt = ParseSt { st_circ :: Circuit
+                       , st_ts   :: [TestCase]
+                       , st_ys   :: M.Map ID Integer
+                       }
+
+type ParseCirc = Parsec String ParseSt
 
 getCirc :: ParseCirc Circuit
-getCirc = fst <$> getState
+getCirc = st_circ <$> getState
 
 getTests :: ParseCirc [TestCase]
-getTests = snd <$> getState
+getTests = st_ts <$> getState
+
+getConsts :: ParseCirc (M.Map Ref Integer)
+getConsts = st_ys <$> getState
 
 modifyCirc :: (Circuit -> Circuit) -> ParseCirc ()
-modifyCirc = modifyState . first
+modifyCirc f = modifyState (\st -> st { st_circ = f (st_circ st) })
 
 addTest :: TestCase -> ParseCirc ()
-addTest t = modifyState $ second (t :)
+addTest t = modifyState (\st -> st { st_ts = t : st_ts st})
+
+insertConst :: ID -> Integer -> ParseCirc ()
+insertConst id c = modifyState (\st -> st { st_ys = M.insert id c (st_ys st)})
 
 parseCirc :: String -> (Circuit, [TestCase])
-parseCirc s = case runParser (circParser >> getState) (emptyCirc, []) "" s of
-    Left err      -> error (show err)
-    Right (c, ts) -> (c, reverse ts)
+parseCirc s = case runParser (circParser >> getState) emptySt "" s of
+    Left err -> error (show err)
+    Right st -> let ys = map snd $ M.toAscList (st_ys st)
+                in ((st_circ st) { consts = ys }, reverse (st_ts st))
   where
     circParser = init >> rest >> eof
     init = many $ choice [parseParam, parseTest]
     rest = many $ choice [try parseGate, try parseInput]
-    emptyCirc = Circuit (-1) M.empty M.empty M.empty
+    emptyCirc = Circuit (-1) M.empty M.empty []
+    emptySt   = ParseSt emptyCirc [] M.empty
 
 parseParam :: ParseCirc ()
 parseParam = do
@@ -75,10 +87,8 @@ parseY ref = do
     id  <- read <$> many1 digit
     spaces
     val <- read <$> many1 digit
-    insertOp ref (Const id val)
-    refs <- constRefs <$> getCirc
-    let refs' = safeInsert ("redefinition of y" ++ show id) id ref refs
-    modifyCirc (\c -> c { constRefs = refs' })
+    insertOp ref (Const id)
+    insertConst id val
 
 parseGate :: ParseCirc ()
 parseGate = do

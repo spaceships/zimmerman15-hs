@@ -1,4 +1,4 @@
-module Zim14.IndexSet where
+module Zim14.Index where
 
 import Data.Monoid
 import qualified Data.Map as M

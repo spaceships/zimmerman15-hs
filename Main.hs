@@ -2,7 +2,7 @@ module Main where
 
 import Zim14.Circuit
 import Zim14.Circuit.Parser
-import Zim14.IndexSet
+import Zim14.Index
 import Zim14.Obfuscate
 
 import CLT13.Util (forceM)
