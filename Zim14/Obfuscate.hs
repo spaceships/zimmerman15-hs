@@ -1,18 +1,22 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ParallelListComp #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 
 module Zim14.Obfuscate where
 
 import Zim14.Circuit
 import Zim14.Index
-import Zim14.Element -- Faker module
 
 import CLT13.IndexSet
-import CLT13.Util (pmap, forceM)
+import CLT13.Util (pmap, plist, forceM)
 import CLT13.Rand
-import Data.List (zip4)
+import Control.DeepSeq
+import GHC.Generics (Generic)
 import qualified CLT13 as CLT
+import qualified Control.Monad.Parallel as P
 import qualified Data.Map as M
+
+import qualified Zim14.Element as E-- Faker module
 
 data Sym = X Int Bool
          | U Int Bool
@@ -22,11 +26,14 @@ data Sym = X Int Bool
          | W Int Bool
          | C
          | S Int Int Bool Bool
-         deriving (Show, Eq, Ord)
+         deriving (Show, Eq, Ord, Generic, NFData)
 
 data Obfuscation = Obfuscation { circ :: Circuit
-                               , get  :: Sym -> Element
+                               , get  :: M.Map Sym Element
                                }
+
+{-type Element = CLT.Encoding-}
+type Element = E.Element
 
 obfuscate :: Int -> Circuit -> IO Obfuscation
 obfuscate λ c = do
@@ -39,7 +46,10 @@ obfuscate λ c = do
         xdegs = pmap (degree c . Input) [0..n-1]
         pows  = topLevelIndex ix n ydeg xdegs
 
-    {-mmap <- CLT.setup lambda d nzs pows-}
+    {-mmap <- CLT.setup λ d nzs pows-}
+    {-let encode x y ix = CLT.encode [x,y] ix mmap-}
+    let encode x y ix = return (E.encode x y ix)
+
     n_chk <- randIO (randInteger λ)
     n_ev  <- randIO (randInteger λ)
 
@@ -54,32 +64,27 @@ obfuscate λ c = do
     δ0s <- map fst <$> randIO (randInvs n n_ev)
     δ1s <- map fst <$> randIO (randInvs n n_ev)
 
-    let (x0s, x1s) = encodeXs ix n αs
-        (u0s, u1s) = encodeUs ix n
-        ys         = encodeYs ix (consts c) βs
-        v          = encodeV  ix
-        (z0s, z1s) = encodeZs ix n xdegs (δ0s, δ1s) (γ0s, γ1s)
-        (w0s, w1s) = encodeWs ix n (γ0s, γ1s)
+    -- get tells how to derive each element, and sequenceGetter actually does it
+    let get :: Sym -> Rand Element
+        get (X i b) = encode (b2i b) (αs !! i) (pow1 (ix (IxX i b)))
 
-    let get (X i b) = return $ encode (b2i b) (αs !! i) (pow1 (ix (IxX i b)))
+        get (U i b) = encode 1 1 (pow1 (ix (IxX i b)))
 
-        get (U i b) = return $ encode 1 1 (pow1 (ix (IxX i b)))
+        get (Y j)   = encode (consts c !! j) (βs !! j) (pow1 (ix IxY))
 
-        get (Y i)   = return $ encode (consts c !! i) (βs !! i) (pow1 (ix IxY))
-
-        get V       = return $ encode 1 1 (pow1 (ix IxY))
+        get V       = encode 1 1 (pow1 (ix IxY))
 
         get (Z i b) = let (δs, γs) = if b then (δ1s, γ1s) else (δ0s, γ0s)
                           xix = pow (ix (IxX i (not b))) (xdegs !! i)
                           wix = pow1 $ ix (IxW i)
                           bc  = pow1 (bitCommit ix i b)
                           zix = indexUnions [xix, wix, bc]
-                      in return $ encode (δs !! i) (γs !! i) zix
+                      in encode (δs !! i) (γs !! i) zix
 
         get (W i b) = let γs  = if b then γ1s else γ0s
                           bc  = pow1 (bitCommit ix i b)
                           wix = indexUnion bc $ pow1 (ix (IxW i))
-                      in return $ encode 0 (γs !! i) wix
+                      in encode 0 (γs !! i) wix
 
         get C = let yix  = pow (ix IxY) ydeg
                     rest = indexUnions $ do
@@ -89,70 +94,41 @@ obfuscate λ c = do
                             zix = pow1 (ix (IxZ i))
                         return $ indexUnions [xi0, xi1, zix]
                     cix = indexUnion yix rest
-                in return $ encode 0 c_val cix
+                in encode 0 c_val cix
 
         get (S i1 i2 b1 b2) | i1 == i2  = error "[get] S undefined when i1 = i2"
                             | i1 > i2   = get (S i2 i1 b1 b2)
-                            | otherwise = return $ encode 1 1 (pow1 (bitFill ix i1 i2 b1 b2))
+                            | otherwise = encode 1 1 (pow1 (bitFill ix i1 i2 b1 b2))
 
-    return $ Obfuscation c undefined
+    m <- randIO (runGetter n m get)
+    putStrLn "encode stuff"
+    forceM m
+    return $ Obfuscation c m
 
-encodeXs :: Indexer -> Int -> [Integer] -> ([Element], [Element])
-encodeXs ix n αs = (x0s, x1s)
-  where
-    ix0s = [pow1 (ix (IxX i False)) | i <- [0..n-1]]
-    ix1s = [pow1 (ix (IxX i True))  | i <- [0..n-1]]
-    x0s  = [encode 0 chk ix | chk <- αs | ix <- ix0s]
-    x1s  = [encode 1 chk ix | chk <- αs | ix <- ix1s]
+-- runGetter takes instructions how to generate each element, generates them,
+-- them returns a big ol map of them
+runGetter :: Int -> Int -> (Sym -> Rand Element) -> Rand (M.Map Sym Element)
+runGetter n m get = do
+    let g s = (s,) <$> get s
 
-encodeUs :: Indexer -> Int -> ([Element], [Element])
-encodeUs ix n = (u0s, u1s)
-  where
-    u0s = [encode 1 1 (pow1 (ix (IxX i False))) | i <- [0..n-1]]
-    u1s = [encode 1 1 (pow1 (ix (IxX i True)))  | i <- [0..n-1]]
+    let is = [0..n-1]
+        js = [0..m-1]
+        bs = [False, True]
 
-encodeYs :: Indexer -> [Integer] -> [Integer] -> [Element]
-encodeYs ix ys βs = [encode y chk (pow1 (ix IxY)) | y <- ys | chk <- βs]
+    let xs = [ g (X i b) | i <- is, b <- bs ]
+        us = [ g (U i b) | i <- is, b <- bs ]
+        ys = [ g (Y j)   | j <- js ]
+        v  = g V
+        zs = [ g (Z i b) | i <- is, b <- bs ]
+        ws = [ g (W i b) | i <- is, b <- bs ]
+        c  = g C
+        ss = [ g (S i1 i2 b1 b2) | i1 <- is, i2 <- is, b1 <- bs, b2 <- bs, i1 /= i2 ]
 
-encodeV :: Indexer -> Element
-encodeV ix = encode 1 1 (pow1 (ix IxY))
+        actions = xs ++ us ++ ys ++ [v] ++ zs ++ ws ++ [c] ++ ss :: [Rand (Sym, Element)]
 
-encodeZs :: Indexer -> Int -> [Int]
-         -> ([Integer], [Integer])
-         -> ([Integer], [Integer])
-         -> ([Element], [Element])
-encodeZs ix n xdegs (δ0s, δ1s) (γ0s, γ1s) = (zs False, zs True)
-  where
-    zs b = do
-        let (δs, γs) = if b then (δ1s, γ1s) else (δ0s, γ0s)
-        (i, xdeg, δ, γ) <- zip4 [0..n-1] xdegs δs γs
-        let xix = pow (ix (IxX i (not b))) xdeg
-            wix = pow1 (ix (IxW i))
-            bc  = pow1 (bitCommit ix i b)
-            zix = indexUnions [xix, wix, bc]
-        return (encode δ γ zix)
-
-encodeWs :: Indexer -> Int -> ([Integer], [Integer]) -> ([Element], [Element])
-encodeWs ix n (γ0s, γ1s) = (ws False, ws True)
-  where
-    ws b = do
-        let γs = if b then γ1s else γ0s
-        (i, γ) <- zip [0..n-1] γs
-        let bc  = pow1 (bitCommit ix i b)
-            wix = indexUnion bc (pow1 (ix (IxW i)))
-        return (encode 0 γ wix)
-
-encodeCStar :: Indexer -> Int -> [Int] -> Int -> Integer -> Element
-encodeCStar ix n xdegs ydeg cstar_val = encode 0 cstar_val cix
-  where
-    yix  = pow (ix IxY) ydeg
-    rest = indexUnions $ do
-        (i, xdeg) <- zip [0..n-1] xdegs
-        let xi0 = pow (ix (IxX i False)) xdeg
-            xi1 = pow (ix (IxX i True))  xdeg
-            zix = pow1 (ix (IxZ i))
-        return $ indexUnions [xi0, xi1, zix]
-    cix = indexUnion yix rest
+    rngs <- splitRand (length actions)
+    let res = pmap (uncurry evalRand) (zip actions rngs) :: [(Sym, Element)]
+    return (M.fromList res)
 
 topLevelIndex :: Indexer -> Int -> Int -> [Int] -> IndexSet
 topLevelIndex ix n ydeg xdegs = indexUnions (yix : xixs ++ zixs ++ wixs ++ sixs)

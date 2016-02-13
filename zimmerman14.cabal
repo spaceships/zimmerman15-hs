@@ -27,6 +27,10 @@ executable zimmerman14
                         , parsec
                         , containers
                         , mtl
+                        , hflags
+                        , parallel
+                        , monad-parallel
+                        , deepseq
     ghc-options:        -threaded -O2 -fprof-auto "-with-rtsopts=-N4 -p"
 
   -- hs-source-dirs:

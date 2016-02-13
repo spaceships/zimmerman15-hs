@@ -1,14 +1,19 @@
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+
 module Zim14.Element where
 
 import Zim14.Index
 
 import CLT13.IndexSet
+
+import Control.DeepSeq
+import GHC.Generics (Generic)
 import qualified Data.Map as M
 
 data Element = Element { ev  :: Integer
                        , chk :: Integer
                        , ix  :: IndexSet
-                       }
+                       } deriving (Eq, Generic, NFData)
 
 encode :: Integer -> Integer -> IndexSet -> Element
 encode = Element
