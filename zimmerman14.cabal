@@ -21,13 +21,14 @@ executable zimmerman14
     other-modules:        Zim14.Circuit
                         , Zim14.Circuit.Parser
                         , Zim14.Index
+                        , Zim14.FakeMMap
   -- other-extensions:
     build-depends:        base >=4.8 && <4.9
                         , clt13
                         , parsec
                         , containers
                         , mtl
-                        , hflags
+                        , options
                         , parallel
                         , monad-parallel
                         , deepseq

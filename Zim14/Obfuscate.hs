@@ -1,6 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Zim14.Obfuscate where
 
@@ -11,12 +12,10 @@ import CLT13.IndexSet
 import CLT13.Util (pmap, plist, forceM)
 import CLT13.Rand
 import Control.DeepSeq
+import Control.Monad
 import GHC.Generics (Generic)
-import qualified CLT13 as CLT
 import qualified Control.Monad.Parallel as P
 import qualified Data.Map as M
-
-import qualified Zim14.Element as E-- Faker module
 
 data Sym = X Int Bool
          | U Int Bool
@@ -28,35 +27,47 @@ data Sym = X Int Bool
          | S Int Int Bool Bool
          deriving (Show, Eq, Ord, Generic, NFData)
 
-data Obfuscation = Obfuscation { circ :: Circuit
-                               , get  :: M.Map Sym Element
-                               }
+type Obfuscation a = M.Map Sym a
 
-{-type Element = CLT.Encoding-}
-type Element = E.Element
+type Encoder a = Integer -> Integer -> IndexSet -> Rand a
 
-obfuscate :: Int -> Circuit -> IO Obfuscation
-obfuscate λ c = do
-    let d = depth c
-        n = ninputs c
-        m = nconsts c
-        ix    = indexer n
-        nzs   = nindices n
-        ydeg  = degree c (Const (-1))
-        xdegs = pmap (degree c . Input) [0..n-1]
-        pows  = topLevelIndex ix n ydeg xdegs
+data ObfParams = ObfParams { n     :: Int
+                           , m     :: Int
+                           , d     :: Int
+                           , ix    :: Indexer
+                           , nzs   :: Int
+                           , ydeg  :: Int
+                           , xdegs :: [Int]
+                           , pows  :: IndexSet
+                           }
 
-    {-mmap <- CLT.setup λ d nzs pows-}
-    {-let encode x y ix = CLT.encode [x,y] ix mmap-}
-    let encode x y ix = return (E.encode x y ix)
+obfParams :: Circuit -> ObfParams
+obfParams c = ObfParams n m d ix nzs ydeg xdegs pows
+  where
+    d = depth c
+    n = ninputs c
+    m = nconsts c
+    ix    = indexer n
+    nzs   = nindices n
+    ydeg  = degree c (Const (-1))
+    xdegs = pmap (degree c . Input) [0..n-1]
+    pows  = topLevelIndex ix n ydeg xdegs
 
+obfuscate
+  :: NFData a
+  => Bool
+  -> ObfParams
+  -> Encoder a
+  -> Int
+  -> Circuit
+  -> IO (Obfuscation a)
+obfuscate verbose (ObfParams {..}) encode λ c = do
     n_chk <- randIO (randInteger λ)
     n_ev  <- randIO (randInteger λ)
 
     αs <- map fst <$> randIO (randInvs n n_chk)
     βs <- map fst <$> randIO (randInvs m n_chk)
     let c_val = evalMod c αs βs n_chk
-    print c_val
 
     γ0s <- map fst <$> randIO (randInvs n n_chk)
     γ1s <- map fst <$> randIO (randInvs n n_chk)
@@ -65,8 +76,7 @@ obfuscate λ c = do
     δ1s <- map fst <$> randIO (randInvs n n_ev)
 
     -- get tells how to derive each element, and sequenceGetter actually does it
-    let get :: Sym -> Rand Element
-        get (X i b) = encode (b2i b) (αs !! i) (pow1 (ix (IxX i b)))
+    let get (X i b) = encode (b2i b) (αs !! i) (pow1 (ix (IxX i b)))
 
         get (U i b) = encode 1 1 (pow1 (ix (IxX i b)))
 
@@ -101,13 +111,13 @@ obfuscate λ c = do
                             | otherwise = encode 1 1 (pow1 (bitFill ix i1 i2 b1 b2))
 
     m <- randIO (runGetter n m get)
-    putStrLn "encode stuff"
+    when verbose $ putStrLn "obfuscating..."
     forceM m
-    return $ Obfuscation c m
+    return m
 
 -- runGetter takes instructions how to generate each element, generates them,
 -- them returns a big ol map of them
-runGetter :: Int -> Int -> (Sym -> Rand Element) -> Rand (M.Map Sym Element)
+runGetter :: NFData a => Int -> Int -> (Sym -> Rand a) -> Rand (M.Map Sym a)
 runGetter n m get = do
     let g s = (s,) <$> get s
 
@@ -124,10 +134,10 @@ runGetter n m get = do
         c  = g C
         ss = [ g (S i1 i2 b1 b2) | i1 <- is, i2 <- is, b1 <- bs, b2 <- bs, i1 /= i2 ]
 
-        actions = xs ++ us ++ ys ++ [v] ++ zs ++ ws ++ [c] ++ ss :: [Rand (Sym, Element)]
+        actions = xs ++ us ++ ys ++ [v] ++ zs ++ ws ++ [c] ++ ss
 
     rngs <- splitRand (length actions)
-    let res = pmap (uncurry evalRand) (zip actions rngs) :: [(Sym, Element)]
+    let res = pmap (uncurry evalRand) (zip actions rngs)
     return (M.fromList res)
 
 topLevelIndex :: Indexer -> Int -> Int -> [Int] -> IndexSet
@@ -135,9 +145,9 @@ topLevelIndex ix n ydeg xdegs = indexUnions (yix : xixs ++ zixs ++ wixs ++ sixs)
   where
     yix  = pow (ix IxY) ydeg
     xixs = [pow (ix (IxX i b)) d | i <- [0..n-1]
-                                  | d <- xdegs
-                                  , b <- [False, True]
-                                  ]
+                                 | d <- xdegs
+                                 , b <- [False, True]
+                                 ]
     zixs = [ pow1 (ix (IxZ i)) | i <- [0..n-1] ]
     wixs = [ pow1 (ix (IxW i)) | i <- [0..n-1] ]
     sixs = map pow1 [sindices n]
