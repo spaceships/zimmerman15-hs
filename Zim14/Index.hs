@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
@@ -103,6 +104,15 @@ sindices n = [ start 0 .. start n - 1 ]
 
 nindices :: Int -> Int
 nindices n = n*(2*n-1) + 4*n + 1
+
+topLevelCLTIndex :: Indexer -> Int -> Int -> [Int] -> CLT.IndexSet
+topLevelCLTIndex ix n ydeg xdegs = CLT.indexUnions (yix : xixs ++ zixs ++ wixs ++ sixs)
+  where
+    yix  = ix (pow Y ydeg)
+    xixs = [ix (pow (X i b) d) | i <- [0..n-1] | d <- xdegs , b <- [False, True]]
+    zixs = [ix (pow (Z i)   1) | i <- [0..n-1]]
+    wixs = [ix (pow (W i)   1) | i <- [0..n-1]]
+    sixs = map CLT.pow1 [sindices n]
 
 --------------------------------------------------------------------------------
 -- Index hepers

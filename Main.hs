@@ -8,6 +8,7 @@ import Zim14.FakeMMap
 import Zim14.Index
 import Zim14.Obfuscate
 import Zim14.Serialize
+import Zim14.Util (pr)
 
 import CLT13.Util (forceM)
 import qualified CLT13 as CLT
@@ -16,11 +17,13 @@ import Control.Concurrent.ParallelIO (stopGlobalPool)
 import Control.Monad
 import Options
 import System.Directory
+import System.IO
 
-data MainOptions = MainOptions { fakeMMap :: Bool
-                               , lambda   :: Int
-                               , verbose  :: Bool
-                               , fresh    :: Bool
+data MainOptions = MainOptions { fakeMMap  :: Bool
+                               , lambda    :: Int
+                               , verbose   :: Bool
+                               , fresh     :: Bool
+                               , plaintext :: Bool
                                }
 
 instance Options MainOptions where
@@ -45,36 +48,51 @@ instance Options MainOptions where
                      , optionLongFlags   = ["fresh"]
                      , optionDescription = "Generate a fresh mmap."
                      })
+        <*> defineOption optionType_bool
+            (\o -> o { optionLongFlags   = ["plaintext"]
+                     , optionDescription = "Run the tests on the plaintext circuit."
+                     })
 
 main = runCommand $ \opts args -> do
     let [fp] = args
     (c, ts) <- parseCirc <$> readFile fp
-    let p   = obfParams c
-        dir = dirName fp (lambda opts)
+    when (plaintext opts) $ do
+        pr "evaluating plaintext tests"
+        ok <- ensure plainEval c ts
+        if ok then pr "ok" else pr "failed"
+        return ()
+    let λ   = lambda opts
+        dir = dirName fp λ
+    p <- params λ c
     if fakeMMap opts then do
         let dir' = dir ++ ".fake"
         exists <- doesDirectoryExist dir'
-        obf <- obfuscate p fakeEncode (lambda opts) c
+        obf <- obfuscate p fakeEncode λ c
+        when (verbose opts) $ pr "obfuscating"
         forceM obf
+        when (verbose opts) $ pr "evaluating"
+        ensure (fakeEval obf p) c ts
         return ()
     else do
         exists <- doesDirectoryExist dir
         (pp, obf) <-
             if not exists || fresh opts then do
-                let (ObfParams {..}) = p
-                mmap <- CLT.setup (verbose opts) (lambda opts) d nzs pows
+                let (Params {..}) = p
+                    ix       = indexer n
+                    topLevel = topLevelCLTIndex ix n (ydeg c) (xdegs c)
+                mmap <- CLT.setup (verbose opts) λ d (nindices n) topLevel
                 let enc x y i = CLT.encode [x,y] (ix i) mmap
-                when (verbose opts) $ putStrLn "obfuscating"
-                obf <- obfuscate p enc (lambda opts) c
+                when (verbose opts) $ pr "obfuscating"
+                obf <- obfuscate p enc λ c
                 forceM obf
                 let pp = CLT.publicParams mmap
                 saveMMap dir pp
                 saveObfuscation dir obf
                 return (pp, obf)
             else do
-                when (verbose opts) $ putStrLn "loading existing mmap"
+                when (verbose opts) $ pr "loading existing mmap"
                 pp <- loadMMap dir
-                when (verbose opts) $ putStrLn "loading existing obfuscation"
+                when (verbose opts) $ pr "loading existing obfuscation"
                 obf  <- loadObfuscation dir
                 return (pp, obf)
         forceM obf

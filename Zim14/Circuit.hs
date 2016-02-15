@@ -6,6 +6,8 @@ module Zim14.Circuit where
 
 import Zim14.Util
 
+import CLT13.Util (pmap)
+
 import Control.Monad.State
 import Data.Map.Strict ((!))
 import qualified Data.Map.Strict as M
@@ -61,8 +63,8 @@ evalMod c xs ys q = foldCirc eval (outRef c) c
     eval (Const id)   [] = ys !! id
 
 -- note: inputs are little endian: [x0, x1, ..., xn]
-evalTest :: Circuit -> [Int] -> Int
-evalTest c xs = b2i (foldCirc eval (outRef c) c /= 0) -- this is how the tests work
+plainEval :: Circuit -> [Int] -> Int
+plainEval c xs = b2i (foldCirc eval (outRef c) c /= 0) -- this is how the tests work
   where
     eval (Add _ _) [x,y] = x + y
     eval (Sub _ _) [x,y] = x - y
@@ -98,6 +100,12 @@ ninputs = M.size . inpRefs
 
 nconsts :: Circuit -> Int
 nconsts = length . consts
+
+ydeg :: Circuit -> Int
+ydeg c = degree c (outRef c) (Const (-1))
+
+xdegs :: Circuit -> [Int]
+xdegs c = pmap (degree c (outRef c) . Input) [0 .. ninputs c - 1]
 
 args :: Op -> [Ref]
 args (Add   x y) = [x,y]
