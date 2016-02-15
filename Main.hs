@@ -4,19 +4,19 @@ module Main where
 
 import Zim14.Circuit
 import Zim14.Circuit.Parser
+import Zim14.FakeMMap
 import Zim14.Index
 import Zim14.Obfuscate
-import Zim14.Obfuscate.Serialize
-import Zim14.FakeMMap
+import Zim14.Serialize
 
 import CLT13.Util (forceM)
-import Control.Monad
-import Control.Concurrent.ParallelIO
-import System.Directory
-import Text.Regex.PCRE
 import qualified CLT13 as CLT
 
+import Control.Concurrent.ParallelIO
+import Control.Monad
 import Options
+import System.Directory
+import Text.Regex.PCRE
 
 data MainOptions = MainOptions { fakeMMap :: Bool
                                , lambda   :: Int
@@ -67,22 +67,22 @@ main = runCommand $ \opts args -> do
         return ()
     else do
         exists <- doesDirectoryExist dir
-        (mmap, obf) <-
+        (pp, obf) <-
             if not exists || fresh opts then do
                 let (ObfParams {..}) = p
                 mmap <- CLT.setup (verbose opts) (lambda opts) d nzs pows
                 let enc x y ix = CLT.encode [x,y] ix mmap
                 obf <- obfuscate (verbose opts) p enc (lambda opts) c
-                let evmmap = evalMMap mmap
-                saveMMap dir evmmap
+                let pp = CLT.publicParams mmap
+                saveMMap dir pp
                 saveObfuscation dir obf
-                return (evmmap, obf)
+                return (pp, obf)
             else do
                 when (verbose opts) $ putStrLn "loading existing mmap"
-                mmap <- loadMMap dir
+                pp <- loadMMap dir
                 when (verbose opts) $ putStrLn "loading existing obfuscation"
                 obf  <- loadObfuscation dir
-                return (mmap, obf)
+                return (pp, obf)
         forceM obf
         stopGlobalPool
 

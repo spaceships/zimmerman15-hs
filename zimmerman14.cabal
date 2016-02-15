@@ -11,11 +11,11 @@ executable zimmerman14
     main-is:              Main.hs
     other-modules:        Zim14.Circuit
                         , Zim14.Circuit.Parser
-                        , Zim14.Index
-                        , Zim14.FakeMMap
-                        , Zim14.Obfuscate
-                        , Zim14.Obfuscate.Serialize
                         , Zim14.Evaluate
+                        , Zim14.FakeMMap
+                        , Zim14.Index
+                        , Zim14.Obfuscate
+                        , Zim14.Serialize
                         , Zim14.Sym
                         , Zim14.Util
 

@@ -9,6 +9,9 @@ import Data.List.Split (splitOn)
 import Data.Serialize (Serialize)
 import GHC.Generics (Generic)
 
+-- Sym represents an actual encoding.
+-- Each encoding has an Index (the subscript).
+-- The Index corresponds to an IndexSet in CLT.
 -- Sym is used as an index into a Map defining the obfuscation.
 -- I use it to name the files corresponding to the obfuscation encodings,
 -- so there was some boilerplate in order to show & read it properly

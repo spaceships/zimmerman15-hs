@@ -4,8 +4,11 @@
 
 module Zim14.Circuit where
 
+import Zim14.Util
+
 import Control.Monad.State
-import qualified Data.Map as M
+import Data.Map.Strict ((!))
+import qualified Data.Map.Strict as M
 
 type Ref = Int
 type ID  = Int
@@ -18,23 +21,25 @@ data Op = Add Ref Ref
         | Input ID
         deriving (Eq, Ord, Show)
 
-data Circuit = Circuit { outRef    :: Ref
-                       , inpRefs   :: M.Map ID Ref -- TODO: maybe dont need these maps
-                       , refMap    :: M.Map Ref Op
-                       , consts    :: [Integer]
+data Circuit = Circuit { outRef  :: Ref
+                       , inpRefs :: M.Map ID Ref -- TODO: maybe dont need these maps
+                       , refMap  :: M.Map Ref Op
+                       , consts  :: [Integer]
                        } deriving (Show)
 
 type TestCase = ([Int], Int)
 
+type Evaluator = Circuit -> [Int] -> Int
+
 depth :: Circuit -> Int
-depth c = foldCirc f c
+depth c = foldCirc f (outRef c) c
   where
     f (Input _) [] = 0
     f (Const _) [] = 0
     f _         xs = maximum xs + 1
 
-degree :: Circuit -> Op -> Int
-degree c z = foldCirc f c
+degree :: Circuit -> Ref -> Op -> Int
+degree c ref z = foldCirc f ref c
   where
     f (Add _ _) [x,y] = x + y
     f (Sub _ _) [x,y] = x + y
@@ -47,47 +52,46 @@ degree c z = foldCirc f c
 
 -- note: inputs are little endian: [x0, x1, ..., xn]
 evalMod :: Integral a => Circuit -> [a] -> [a] -> a -> a
-evalMod c xs ys q = foldCirc evalOp c
+evalMod c xs ys q = foldCirc eval (outRef c) c
   where
-    evalOp (Add _ _) [x,y] = x + y `mod` q
-    evalOp (Sub _ _) [x,y] = x - y `mod` q
-    evalOp (Mul _ _) [x,y] = x * y `mod` q
-    evalOp (Input id)   [] = xs !! id
-    evalOp (Const id)   [] = ys !! id
+    eval (Add _ _) [x,y] = x + y `mod` q
+    eval (Sub _ _) [x,y] = x - y `mod` q
+    eval (Mul _ _) [x,y] = x * y `mod` q
+    eval (Input id)   [] = xs !! id
+    eval (Const id)   [] = ys !! id
 
 -- note: inputs are little endian: [x0, x1, ..., xn]
 evalTest :: Circuit -> [Int] -> Int
-evalTest c xs = if foldCirc evalOp c /= 0 then 1 else 0 -- this is how the tests work
+evalTest c xs = b2i (foldCirc eval (outRef c) c /= 0) -- this is how the tests work
   where
-    evalOp (Add _ _) [x,y] = x + y
-    evalOp (Sub _ _) [x,y] = x - y
-    evalOp (Mul _ _) [x,y] = x * y
-    evalOp (Input id)   [] = xs !! id
-    evalOp (Const id)   [] = fromIntegral (consts c !! id)
+    eval (Add _ _) [x,y] = x + y
+    eval (Sub _ _) [x,y] = x - y
+    eval (Mul _ _) [x,y] = x * y
+    eval (Input id)   [] = xs !! id
+    eval (Const id)   [] = fromIntegral (consts c !! id)
 
-ensure :: Circuit -> [TestCase] -> Bool
-ensure c ts = all ensure (zip [0..] ts)
+ensure :: Evaluator -> Circuit -> [TestCase] -> IO Bool
+ensure eval c ts = and <$> mapM ensure (zip [0..] ts)
   where
-    ensure (i, (inps, res)) = if evalTest c (reverse inps) == res then True
-                              else error ("test " ++ show i ++ " failed: " ++
-                                          concatMap show inps ++ " /= " ++ show res)
+    ensure (i, (inps, res)) = do
+        if eval c (reverse inps) == res then
+            return True
+        else do
+            putStrLn ("\x1b[1;41m" ++ "test " ++ show i ++ " failed: " ++
+                      concatMap show inps ++ " /= " ++ show res ++ "\x1b[0m")
+            return False
 
-foldCirc :: (Op -> [a] -> a) -> Circuit -> a
-foldCirc f (Circuit {..}) = evalState (eval outRef) M.empty
+foldCirc :: (Op -> [a] -> a) -> Ref -> Circuit -> a
+foldCirc f start (Circuit {..}) = evalState (eval start) M.empty
   where
     eval ref = gets (M.lookup ref) >>= \case
         Just val -> return val
         Nothing  -> do
-            let op = evilLook ref refMap
+            let op = refMap ! ref
             argVals <- mapM eval (args op)
             let val = f op argVals
             modify (M.insert ref val)
             return val
-
-evilLook :: (Ord a, Show a) => a -> M.Map a b -> b
-evilLook x m = case M.lookup x m of
-    Nothing -> error ("unknown ref " ++ show x ++ "!")
-    Just op -> op
 
 ninputs :: Circuit -> Int
 ninputs = M.size . inpRefs

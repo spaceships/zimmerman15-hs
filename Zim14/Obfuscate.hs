@@ -15,7 +15,7 @@ import CLT13.Util (pmap, forceM)
 
 import Control.DeepSeq (NFData)
 import Control.Monad
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import qualified CLT13 as CLT
 
 type Obfuscation a = M.Map Sym a
@@ -32,14 +32,6 @@ data ObfParams = ObfParams { n     :: Int
 
 type Encoder a = Integer -> Integer -> IndexSet -> Rand a
 
-data EvalCLT = EvalCLT { x0  :: Integer
-                       , pzt :: Integer
-                       , nu  :: Int
-                       }
-
-evalMMap :: CLT.MMap -> EvalCLT
-evalMMap mmap = EvalCLT (CLT.x0 mmap) (CLT.pzt mmap) (CLT.nu (CLT.params mmap))
-
 obfParams :: Circuit -> ObfParams
 obfParams c = ObfParams n m d ix nzs ydeg xdegs pows
   where
@@ -48,8 +40,8 @@ obfParams c = ObfParams n m d ix nzs ydeg xdegs pows
     m = nconsts c
     ix    = indexer n
     nzs   = nindices n
-    ydeg  = degree c (Const (-1))
-    xdegs = pmap (degree c . Input) [0..n-1]
+    ydeg  = degree c (outRef c) (Const (-1))
+    xdegs = pmap (degree c (outRef c) . Input) [0..n-1]
     pows  = topLevelIndex ix n ydeg xdegs
 
 obfuscate

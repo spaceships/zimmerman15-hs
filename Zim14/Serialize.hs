@@ -1,14 +1,15 @@
-module Zim14.Obfuscate.Serialize where
+module Zim14.Serialize where
 
 import Zim14.Obfuscate
+
+import qualified CLT13 as CLT
 
 import Control.Monad
 import Control.Concurrent.ParallelIO
 import System.Directory
-import qualified CLT13 as CLT
-import qualified Data.Serialize as S
-import qualified Data.Map as M
 import qualified Data.ByteString as BS
+import qualified Data.Map as M
+import qualified Data.Serialize as S
 
 saveObfuscation :: S.Serialize a => FilePath -> Obfuscation a -> IO ()
 saveObfuscation dir obf = do
@@ -31,15 +32,15 @@ loadObfuscation dir = do
     obfs <- parallelInterleaved $ map readEnc obfs
     return $ M.fromList obfs
 
-saveMMap :: FilePath -> EvalCLT -> IO ()
+saveMMap :: FilePath -> CLT.PublicParams -> IO ()
 saveMMap dir mmap = do
     createDirectoryIfMissing False dir
     let write name elem = BS.writeFile (dir ++ "/mmap-" ++ name) (S.encode elem)
-    write "x0"  $ x0  mmap
-    write "pzt" $ pzt mmap
-    write "nu"  $ nu  mmap
+    write "x0"  $ CLT.modulus    mmap
+    write "pzt" $ CLT.zeroTester mmap
+    write "nu"  $ CLT.threshold  mmap
 
-loadMMap :: FilePath -> IO EvalCLT
+loadMMap :: FilePath -> IO CLT.PublicParams
 loadMMap dir = do
     fps <- listDirectory dir
     let read name = do
@@ -50,4 +51,4 @@ loadMMap dir = do
     x0  <- read "x0"
     pzt <- read "pzt"
     nu  <- read "nu"
-    return $ EvalCLT x0 pzt nu
+    return $ CLT.PublicParams x0 pzt nu
