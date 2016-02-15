@@ -28,6 +28,11 @@ instance Monoid Index where
     mappend a b = Index (M.unionWith (+) (getIndex a) (getIndex b))
     mempty      = Index M.empty
 
+accumIndex :: (IndexSym -> a -> a) -> Index -> a -> a
+accumIndex f ix x = foldr f x indices
+  where
+    indices = concatMap (uncurry (flip replicate)) $ M.toList (getIndex ix)
+
 --------------------------------------------------------------------------------
 -- bitcommit & bitfill from the paper
 
@@ -107,7 +112,6 @@ pow ix pow = Index $ M.singleton ix pow
 
 pow1 :: IndexSym -> Index
 pow1 = flip pow 1
-
 
 -- Return the symbols from A that aren't in B, and their difference in Power.
 -- Assumes that b is always smaller power than a

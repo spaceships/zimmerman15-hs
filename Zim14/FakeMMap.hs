@@ -30,26 +30,12 @@ fakeEncode x y ix = return $ FakeEncoding x y ix
 fakeEval :: Obfuscation FakeEncoding -> Circuit -> [Int] -> Int
 fakeEval obf c xs = undefined $ foldCirc eval (outRef c) c
   where
-    pows = powMap c xs
-
     eval :: Op -> [FakeEncoding] -> FakeEncoding
     eval (Input i)    [] = let b = i2b (xs !! i) in obf ! X_ i b
     eval (Const i)    [] = obf ! Y_ i
     eval (Mul _ _) [x,y] = fakeMul x y
-    eval (Add _ _) [x,y] = fakeAdd obf pows x y
+    eval (Add _ _) [x,y] = fakeAdd obf x y
     eval (Sub _ _) [x,y] = fakeSub obf x y
-
-type PowMap = M.Map Ref [(Sym, Int)]
--- returns a Map of each of the Syms in an index at a particular point in the
--- circuit. Requires input to decide between X i True and X i False.
-powMap :: Circuit -> [Int] -> PowMap
-powMap c xs = M.fromList $ pmap pows $ M.keys (refMap c)
-  where
-    n = ninputs c
-    m = nconsts c
-    getXs ref = [(X_ i (i2b (xs!!i)), degree c ref (Input i)) | i <- [0..n]]
-    getYs ref = [(Y_ j              , degree c ref (Const j)) | j <- [0..m]]
-    pows  ref = (ref, getXs ref ++ getYs ref)
 
 fakeMul :: FakeEncoding -> FakeEncoding -> FakeEncoding
 fakeMul x y = FakeEncoding (ev x * ev y) (chk x * chk y) (ix x <> ix y)
@@ -57,18 +43,25 @@ fakeMul x y = FakeEncoding (ev x * ev y) (chk x * chk y) (ix x <> ix y)
 fakeProd :: [FakeEncoding] -> FakeEncoding
 fakeProd = foldr1 fakeMul
 
-fakeAdd
-  :: Obfuscation FakeEncoding
-  -> PowMap
-  -> FakeEncoding
-  -> FakeEncoding
-  -> FakeEncoding
-fakeAdd obf pows x y = undefined
+fakeAdd :: Obfuscation FakeEncoding -> FakeEncoding -> FakeEncoding -> FakeEncoding
+fakeAdd obf x y = FakeEncoding (ev x' + ev y') (chk x' + chk y') target
   where
-    zix   = ix x <> ix y
-    xdiff = indexDiff zix (ix x)
-    ydiff = indexDiff zix (ix y)
+    target = ix x <> ix y
+    x' = raise obf target x
+    y' = raise obf target y
 
-fakeSub = undefined
+fakeSub :: Obfuscation FakeEncoding -> FakeEncoding -> FakeEncoding -> FakeEncoding
+fakeSub obf x y = FakeEncoding (ev x' - ev y') (chk x' - chk y') target
+  where
+    target = ix x <> ix y
+    x' = raise obf target x
+    y' = raise obf target y
 
--- TODO: I think I need to keep track of FORMAL SYMBOLS in order to lift encodings
+-- raise x to the index target by multiplying by powers of U_ and V_
+raise :: Obfuscation FakeEncoding -> Index -> FakeEncoding -> FakeEncoding
+raise obf target x = accumIndex accum diff x
+  where
+    diff = indexDiff (ix x) target
+    accum (X i b) x = fakeMul (obf!U_ i b) x
+    accum Y       x = fakeMul (obf!V_)     x
+    accum oops    _ = error ("[raise] unexpected index " ++ show oops)

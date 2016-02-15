@@ -11,12 +11,12 @@ import Zim14.Index
 
 import CLT13.Rand
 import CLT13.Util (pmap, forceM)
+import qualified CLT13 as CLT
 
 import Control.DeepSeq (NFData)
 import Control.Monad
 import Data.Monoid
 import qualified Data.Map.Strict as M
-import qualified CLT13 as CLT
 
 type Obfuscation a = M.Map Sym a
 
