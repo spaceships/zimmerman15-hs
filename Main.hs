@@ -12,11 +12,10 @@ import Zim14.Serialize
 import CLT13.Util (forceM)
 import qualified CLT13 as CLT
 
-import Control.Concurrent.ParallelIO
+import Control.Concurrent.ParallelIO (stopGlobalPool)
 import Control.Monad
 import Options
 import System.Directory
-import Text.Regex.PCRE
 
 data MainOptions = MainOptions { fakeMMap :: Bool
                                , lambda   :: Int

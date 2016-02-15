@@ -20,18 +20,17 @@ executable zimmerman14
                         , Zim14.Util
 
     build-depends:        base >=4.8 && <4.9
-                        , clt13
-                        , parsec
-                        , containers
-                        , cereal
                         , bytestring
+                        , cereal
+                        , clt13
+                        , containers
+                        , deepseq
                         , directory >= 1.2.5
                         , mtl
                         , options
                         , parallel-io
-                        , deepseq
+                        , parsec
                         , split
-                        , regex-pcre
 
     ghc-options:        -threaded -O2 -fprof-auto "-with-rtsopts=-N4 -p"
 

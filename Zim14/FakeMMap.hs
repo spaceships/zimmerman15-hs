@@ -40,9 +40,6 @@ fakeEval obf c xs = undefined $ foldCirc eval (outRef c) c
 fakeMul :: FakeEncoding -> FakeEncoding -> FakeEncoding
 fakeMul x y = FakeEncoding (ev x * ev y) (chk x * chk y) (ix x <> ix y)
 
-fakeProd :: [FakeEncoding] -> FakeEncoding
-fakeProd = foldr1 fakeMul
-
 fakeAdd :: Obfuscation FakeEncoding -> FakeEncoding -> FakeEncoding -> FakeEncoding
 fakeAdd obf x y = FakeEncoding (ev x' + ev y') (chk x' + chk y') target
   where
