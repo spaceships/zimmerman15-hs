@@ -22,16 +22,22 @@ executable zimmerman14
                         , Zim14.Circuit.Parser
                         , Zim14.Index
                         , Zim14.FakeMMap
+                        , Zim14.Obfuscate
+                        , Zim14.Obfuscate.Serialize
   -- other-extensions:
     build-depends:        base >=4.8 && <4.9
                         , clt13
                         , parsec
                         , containers
+                        , cereal
+                        , bytestring
+                        , directory >= 1.2.5
                         , mtl
                         , options
-                        , parallel
-                        , monad-parallel
+                        , parallel-io
                         , deepseq
+                        , split
+                        , regex-pcre
     ghc-options:        -threaded -O2 -fprof-auto "-with-rtsopts=-N4 -p"
 
   -- hs-source-dirs:

@@ -8,13 +8,14 @@ import CLT13.IndexSet
 import CLT13.Rand
 
 import Control.DeepSeq
+import Data.Serialize (Serialize)
 import GHC.Generics (Generic)
 import qualified Data.Map as M
 
 data FakeEncoding = FakeEncoding { ev  :: Integer
                                  , chk :: Integer
                                  , ix  :: IndexSet
-                                 } deriving (Eq, Generic, NFData)
+                                 } deriving (Serialize, Eq, Generic, NFData)
 
 fakeEncode :: Integer -> Integer -> IndexSet -> Rand FakeEncoding
 fakeEncode x y ix = return $ FakeEncoding x y ix
