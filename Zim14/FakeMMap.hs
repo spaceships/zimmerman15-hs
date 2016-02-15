@@ -32,13 +32,12 @@ fakeEncode x y ix = return $ FakeEncoding x y ix
 fakeEvalTest :: Obfuscation FakeEncoding -> Params -> Circuit -> [Int] -> Int
 fakeEvalTest obf p c xs = b2i $ not ((ev z == 0) && (chk z == 0))
   where
-    z = fakeEval obf p c xs
+    z = fakeEval obf p c (map i2b xs)
 
-fakeEval :: Obfuscation FakeEncoding -> Params -> Circuit -> [Int] -> FakeEncoding
-fakeEval obf p c xs_ = z
+fakeEval :: Obfuscation FakeEncoding -> Params -> Circuit -> [Bool] -> FakeEncoding
+fakeEval obf p c xs = z
   where
     n  = ninputs c
-    xs = map i2b xs_
 
     chat = foldCirc eval (outRef c) c
 

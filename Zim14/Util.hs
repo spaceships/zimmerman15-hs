@@ -1,5 +1,8 @@
 module Zim14.Util where
 
+import CLT13.Util (sizeBase2)
+
+import Data.Bits ((.&.))
 import System.IO
 
 b2i :: Integral a => Bool -> a
@@ -13,3 +16,11 @@ pr :: String -> IO ()
 pr s = do
     putStrLn s
     hFlush stdout
+
+num2bits :: Integer -> [Bool]
+num2bits x = reverse bs
+  where
+    bs = [ x .&. 2^i > 0 | i <- [0 .. sizeBase2 x] ]
+
+readBitstring :: String -> [Bool]
+readBitstring = map (== '1')
