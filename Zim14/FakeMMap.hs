@@ -24,15 +24,20 @@ data FakeEncoding = FakeEncoding {
     ev  :: Integer,
     chk :: Integer,
     ix  :: Index
-} deriving (Eq, Generic, NFData)
+} deriving (Show, Eq, Generic, NFData)
 
 fakeEncode :: Integer -> Integer -> Index -> Rand FakeEncoding
 fakeEncode x y ix = return $ FakeEncoding x y ix
 
-fakeEval :: Obfuscation FakeEncoding -> Params -> Circuit -> [Int] -> Int
-fakeEval obf p c xs_ = b2i ((ev z /= 0) && (chk z /= 0))
+fakeEvalTest :: Obfuscation FakeEncoding -> Params -> Circuit -> [Int] -> Int
+fakeEvalTest obf p c xs = b2i $ not ((ev z == 0) && (chk z == 0))
   where
-    n  = traceShowId $ ninputs c
+    z = fakeEval obf p c xs
+
+fakeEval :: Obfuscation FakeEncoding -> Params -> Circuit -> [Int] -> FakeEncoding
+fakeEval obf p c xs_ = z
+  where
+    n  = ninputs c
     xs = map i2b xs_
 
     chat = foldCirc eval (outRef c) c

@@ -46,8 +46,8 @@ params λ c = do
         n_chk = n_chk
     }
 
-obfuscate :: NFData a => Params -> Encoder a -> Int -> Circuit -> IO (Obfuscation a)
-obfuscate (Params {..}) encode λ c = do
+obfuscate :: NFData a => Bool -> Params -> Encoder a -> Int -> Circuit -> IO (Obfuscation a)
+obfuscate verbose (Params {..}) encode λ c = do
     αs <- map fst <$> randIO (randInvs n n_chk)
     βs <- map fst <$> randIO (randInvs m n_chk)
     let c_val = evalMod c αs βs n_chk
@@ -93,27 +93,32 @@ obfuscate (Params {..}) encode λ c = do
                              | i1 > i2   = get (S_ i2 i1 b1 b2)
                              | otherwise = encode 1 1 (bitFill i1 i2 b1 b2)
 
-    m <- randIO (runGetter n m get)
+    m <- randIO (runGetter verbose n m get)
     return m
 
 -- runGetter takes instructions how to generate each element, generates them,
 -- them returns a big ol map of them
-runGetter :: NFData a => Int -> Int -> (Sym -> Rand a) -> Rand (M.Map Sym a)
-runGetter n m get = do
+runGetter :: NFData a => Bool -> Int -> Int -> (Sym -> Rand a) -> Rand (M.Map Sym a)
+runGetter verbose n m get = do
+    let tr = if verbose then trace else flip const
+
     let g s = (s,) <$> get s
 
     let is = [0..n-1]
         js = [0..m-1]
         bs = [False, True]
 
-    let xs = trace "generating xs" $ [ g (X_ i b) | i <- is, b <- bs ]
-        us = trace "generating us" $ [ g (U_ i b) | i <- is, b <- bs ]
-        ys = trace "generating ys" $ [ g (Y_ j)   | j <- js ]
-        v  = trace "generating v"  $ g V_
-        zs = trace "generating zs" $ [ g (Z_ i b) | i <- is, b <- bs ]
-        ws = trace "generating ws" $ [ g (W_ i b) | i <- is, b <- bs ]
-        c  = trace "generating c"  $ g C_
-        ss = trace "generating ss" $ [ g (S_ i1 i2 b1 b2) | i1 <- is, i2 <- is, b1 <- bs, b2 <- bs, i1 /= i2 ]
+    let xs = tr "generating xs" $ [ g (X_ i b) | i <- is, b <- bs ]
+        us = tr "generating us" $ [ g (U_ i b) | i <- is, b <- bs ]
+        ys = tr "generating ys" $ [ g (Y_ j)   | j <- js ]
+        v  = tr "generating v"  $ g V_
+        zs = tr "generating zs" $ [ g (Z_ i b) | i <- is, b <- bs ]
+        ws = tr "generating ws" $ [ g (W_ i b) | i <- is, b <- bs ]
+        c  = tr "generating c"  $ g C_
+        ss = tr "generating ss" $ [ g (S_ i1 i2 b1 b2)
+                                  | i1 <- is, i2 <- is
+                                  , b1 <- bs, b2 <- bs, i1 /= i2
+                                  ]
 
         actions = xs ++ us ++ ys ++ [v] ++ zs ++ ws ++ [c] ++ ss
 

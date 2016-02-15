@@ -23,7 +23,7 @@ data IndexSym = Y
 
 type Power = Int
 newtype Index = Index { getIndex :: M.Map IndexSym Power
-                      } deriving (Eq, Ord, Generic, NFData)
+                      } deriving (Show, Eq, Ord, Generic, NFData)
 
 instance Monoid Index where
     mappend a b = Index (M.unionWith (+) (getIndex a) (getIndex b))

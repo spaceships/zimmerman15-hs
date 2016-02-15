@@ -60,19 +60,18 @@ main = runCommand $ \opts args -> do
         pr "evaluating plaintext tests"
         ok <- ensure plainEval c ts
         if ok then pr "ok" else pr "failed"
-        return ()
     let λ   = lambda opts
         dir = dirName fp λ
     p <- params λ c
     if fakeMMap opts then do
         let dir' = dir ++ ".fake"
         exists <- doesDirectoryExist dir'
-        obf <- obfuscate p fakeEncode λ c
+        obf <- obfuscate (verbose opts) p fakeEncode λ c
         when (verbose opts) $ pr "obfuscating"
         forceM obf
-        when (verbose opts) $ pr "evaluating"
-        ensure (fakeEval obf p) c ts
-        return ()
+        pr "running tests"
+        ok <- ensure (fakeEvalTest obf p) c ts
+        if ok then pr "ok" else pr "failed"
     else do
         exists <- doesDirectoryExist dir
         (pp, obf) <-
@@ -83,7 +82,7 @@ main = runCommand $ \opts args -> do
                 mmap <- CLT.setup (verbose opts) λ d (nindices n) topLevel
                 let enc x y i = CLT.encode [x,y] (ix i) mmap
                 when (verbose opts) $ pr "obfuscating"
-                obf <- obfuscate p enc λ c
+                obf <- obfuscate (verbose opts) p enc λ c
                 forceM obf
                 let pp = CLT.publicParams mmap
                 saveMMap dir pp
