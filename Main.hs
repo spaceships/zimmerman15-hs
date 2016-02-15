@@ -55,14 +55,7 @@ main = runCommand $ \opts args -> do
     if fakeMMap opts then do
         let dir' = dir ++ ".fake"
         exists <- doesDirectoryExist dir'
-        obf <-
-            if not exists || fresh opts then do
-                obf <- obfuscate (verbose opts) p fakeEncode (lambda opts) c
-                saveObfuscation dir' obf
-                return obf
-            else do
-                when (verbose opts) $ putStrLn "loading existing obfuscation"
-                loadObfuscation dir'
+        obf <- obfuscate p fakeEncode (lambda opts) c
         forceM obf
         return ()
     else do
@@ -71,8 +64,10 @@ main = runCommand $ \opts args -> do
             if not exists || fresh opts then do
                 let (ObfParams {..}) = p
                 mmap <- CLT.setup (verbose opts) (lambda opts) d nzs pows
-                let enc x y ix = CLT.encode [x,y] ix mmap
-                obf <- obfuscate (verbose opts) p enc (lambda opts) c
+                let enc x y i = CLT.encode [x,y] (ix i) mmap
+                when (verbose opts) $ putStrLn "obfuscating"
+                obf <- obfuscate p enc (lambda opts) c
+                forceM obf
                 let pp = CLT.publicParams mmap
                 saveMMap dir pp
                 saveObfuscation dir obf
@@ -84,7 +79,7 @@ main = runCommand $ \opts args -> do
                 obf  <- loadObfuscation dir
                 return (pp, obf)
         forceM obf
-        stopGlobalPool
+    stopGlobalPool
 
 dirName :: FilePath -> Int -> FilePath
 dirName fp λ = fp ++ "." ++ show λ
