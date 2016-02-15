@@ -1,13 +1,13 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 
 module Zim14.Obfuscate where
 
 import Zim14.Circuit
+import Zim14.Index
 import Zim14.Sym
 import Zim14.Util (b2i)
-import Zim14.Index
 
 import CLT13.Rand
 import CLT13.Util (pmap, forceM)
