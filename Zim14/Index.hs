@@ -16,6 +16,7 @@ import Control.DeepSeq (NFData)
 import Data.Monoid
 import GHC.Generics (Generic)
 import Text.Printf
+import Data.Serialize (Serialize)
 import qualified Data.Map.Strict as M
 
 -- the trouble is that straddling sets map to symbols that have
@@ -30,7 +31,7 @@ data IndexSym = Y
               | Z Int
               | W Int
               | F Int Int -- F i j: The jth fresh var from the ith spanning set
-              deriving (Eq, Ord, Generic, NFData)
+              deriving (Eq, Ord, Generic, NFData, Serialize)
 
 instance Show IndexSym where
     show Y           = "Y"
@@ -41,7 +42,7 @@ instance Show IndexSym where
 
 type Power = Int
 newtype Index = Index { getIndex :: M.Map IndexSym Power
-                      } deriving (Eq, Ord, Generic, NFData)
+                      } deriving (Eq, Ord, Generic, NFData, Serialize)
 
 instance Show Index where
     show = unwords . map showElem . M.toList . getIndex

@@ -1,5 +1,6 @@
 module Zim14.Serialize where
 
+import Zim14.Encoding
 import Zim14.Obfuscate
 
 import qualified CLT13 as CLT
@@ -11,14 +12,14 @@ import qualified Data.ByteString as BS
 import qualified Data.Map as M
 import qualified Data.Serialize as S
 
-saveObfuscation :: FilePath -> Obfuscation CLT.Encoding -> IO ()
+saveObfuscation :: S.Serialize a => FilePath -> Obfuscation a -> IO ()
 saveObfuscation dir obf = do
     createDirectoryIfMissing False dir
     forM_ (M.toList obf) $ \(k,v) -> do
         let fp = dir ++ "/" ++ show k
         BS.writeFile fp (S.encode v)
 
-loadObfuscation :: FilePath -> IO (Obfuscation CLT.Encoding)
+loadObfuscation :: S.Serialize a => FilePath -> IO (Obfuscation a)
 loadObfuscation dir = do
     fps <- listDirectory dir
     let obfs = filter ((/=) "mmap-" . take 5) fps

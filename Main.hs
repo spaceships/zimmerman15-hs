@@ -4,7 +4,8 @@ module Main where
 
 import Zim14.Circuit
 import Zim14.Circuit.Parser
-import Zim14.FakeMMap
+import Zim14.Encoding
+import Zim14.FakeEncoding
 import Zim14.Index
 import Zim14.Obfuscate
 import Zim14.Serialize
@@ -20,7 +21,7 @@ import System.Directory
 import System.Exit
 import Text.Printf
 
-data MainOptions = MainOptions { fakeMMap  :: Bool
+data MainOptions = MainOptions { fake      :: Bool
                                , lambda    :: Int
                                , verbose   :: Bool
                                , fresh     :: Bool
@@ -84,7 +85,8 @@ main = runCommand $ \opts [fp] -> do
                 let res = plainEval c (map b2i (readBitstring str))
                 print res
 
-    if fakeMMap opts then do
+    -- obfuscate & evaluate using the fake encodings
+    if fake opts then do
         obf <- obfuscate (verbose opts) p fakeEncode c
         when (verbose opts) $ pr "obfuscating"
         forceM obf
@@ -100,20 +102,19 @@ main = runCommand $ \opts [fp] -> do
                 pr ("evaluating on input x=" ++ str)
                 let res = fakeEval obf p c (readBitstring str)
                 pr ("result=" ++ show res)
+
+    -- obfuscate & evaluate using CLT13
     else do
         exists <- doesDirectoryExist dir
         (pp, obf) <-
             if not exists || fresh opts then do
-                let ix       = indexer n
-                    topLevel = topLevelCLTIndex c
-                mmap <- CLT.setup (verbose opts) λ d (numIndices n) topLevel
-                let enc x y i = CLT.encode [x,y] (ix i) mmap
+                mmap <- CLT.setup (verbose opts) λ d (numIndices n) (topLevelCLTIndex c)
+                let pp  = CLT.publicParams mmap
+                    enc = encode mmap (indexer n)
                 when (verbose opts) $ pr "obfuscating"
                 obf <- obfuscate (verbose opts) p enc c
-                forceM obf
-                let pp = CLT.publicParams mmap
-                saveMMap dir pp
-                saveObfuscation dir obf
+                {-saveMMap dir pp-}
+                {-saveObfuscation dir obf-}
                 return (pp, obf)
             else do
                 when (verbose opts) $ pr "loading existing mmap"
@@ -122,6 +123,8 @@ main = runCommand $ \opts [fp] -> do
                 obf  <- loadObfuscation dir
                 return (pp, obf)
         pp `seq` forceM (obf)
+
+    -- cleanup
     stopGlobalPool
 
 dirName :: FilePath -> Int -> FilePath

@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Zim14.FakeMMap where
+module Zim14.FakeEncoding where
 
 import Zim14.Circuit
 import Zim14.Index
@@ -83,8 +83,8 @@ fakeAdd :: Obfuscation FakeEncoding -> Params -> FakeEncoding -> FakeEncoding ->
 fakeAdd obf p x y = FakeEncoding ev' chk' target
   where
     target = ix x <> indexMinus (ix y) (ix x)
-    x' = raise obf p target x
-    y' = raise obf p target y
+    x' = fakeRaise obf p target x
+    y' = fakeRaise obf p target y
     ev'  = ev x'  + ev y'  `mod` n_ev p
     chk' = chk x' + chk y' `mod` n_chk p
 
@@ -93,14 +93,14 @@ fakeSub :: Obfuscation FakeEncoding -> Params -> FakeEncoding -> FakeEncoding ->
 fakeSub obf p x y = FakeEncoding ev' chk' target
   where
     target = ix x <> indexMinus (ix y) (ix x)
-    x' = raise obf p target x
-    y' = raise obf p target y
+    x' = fakeRaise obf p target x
+    y' = fakeRaise obf p target y
     ev'  = ev x'  - ev y'  `mod` n_ev p
     chk' = chk x' - chk y' `mod` n_chk p
 
 -- raise x to the index target by multiplying by powers of U_ and V_
-raise :: Obfuscation FakeEncoding -> Params -> Index -> FakeEncoding -> FakeEncoding
-raise obf p target x = accumIndex accum diff x
+fakeRaise :: Obfuscation FakeEncoding -> Params -> Index -> FakeEncoding -> FakeEncoding
+fakeRaise obf p target x = accumIndex accum diff x
   where
     diff = indexDiff (ix x) target
 
