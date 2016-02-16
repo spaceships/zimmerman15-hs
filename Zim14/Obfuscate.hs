@@ -8,6 +8,7 @@ import Zim14.Circuit
 import Zim14.Index
 import Zim14.Sym
 import Zim14.Util (b2i)
+import Zim14.Encoding
 
 import CLT13.Rand
 import CLT13.Util (pmap)
@@ -20,7 +21,7 @@ import qualified Data.Map.Strict as M
 
 import Debug.Trace
 
-type Obfuscation a = M.Map Sym a
+type Obfuscation a = M.Map Sym (Encoding a)
 
 data Params = Params {
     n     :: Int,
@@ -52,7 +53,7 @@ params λ c = do
     }
 
 obfuscate :: NFData a => Bool -> Params -> Encoder a -> Circuit -> IO (Obfuscation a)
-obfuscate verbose (Params {..}) encode c = do
+obfuscate verbose (Params {..}) encode' c = do
     αs <- map fst <$> randIO (randInvs n n_chk)
     βs <- map fst <$> randIO (randInvs m n_chk)
     let chk_val = evalMod c αs βs n_chk
@@ -63,6 +64,9 @@ obfuscate verbose (Params {..}) encode c = do
 
     δ0s <- map fst <$> randIO (randInvs n n_ev)
     δ1s <- map fst <$> randIO (randInvs n n_ev)
+
+    -- A little wrapper to create Encodings and not trouble the caller with dealing with it.
+    let encode x y ix = Encoding ix <$> encode' x y ix
 
     -- get tells how to derive each element, and sequenceGetter actually does it
     let get (X_ i b) = encode (b2i b) (αs !! i) (pow1 [X i b])
@@ -103,7 +107,7 @@ obfuscate verbose (Params {..}) encode c = do
 
 -- runGetter takes instructions how to generate each element, generates them,
 -- them returns a big ol map of them
-runGetter :: NFData a => Bool -> Int -> Int -> (Sym -> Rand a) -> Rand (M.Map Sym a)
+runGetter :: NFData a => Bool -> Int -> Int -> (Sym -> Rand (Encoding a)) -> Rand (Obfuscation a)
 runGetter verbose n m get = do
     let tr = if verbose then trace else flip const
 

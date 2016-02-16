@@ -1,7 +1,6 @@
 module Zim14.Serialize where
 
-import Zim14.Encoding
-import Zim14.Obfuscate
+import Zim14.Obfuscate (Obfuscation)
 
 import qualified CLT13 as CLT
 

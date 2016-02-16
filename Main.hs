@@ -5,7 +5,10 @@ module Main where
 import Zim14.Circuit
 import Zim14.Circuit.Parser
 import Zim14.Encoding
-import Zim14.FakeEncoding
+import Zim14.Evaluate
+import Zim14.Encoding
+import Zim14.Encoding.Fake
+import Zim14.Encoding.CLT13
 import Zim14.Index
 import Zim14.Obfuscate
 import Zim14.Serialize
@@ -105,16 +108,17 @@ main = runCommand $ \opts [fp] -> do
 
     -- obfuscate & evaluate using CLT13
     else do
-        exists <- doesDirectoryExist dir
-        (pp, obf) <-
+        -- either obfuscate now or load the existing obfuscation
+        (pp, obf) <- do
+            exists <- doesDirectoryExist dir
             if not exists || fresh opts then do
                 mmap <- CLT.setup (verbose opts) λ d (numIndices n) (topLevelCLTIndex c)
                 let pp  = CLT.publicParams mmap
                     enc = encode mmap (indexer n)
                 when (verbose opts) $ pr "obfuscating"
                 obf <- obfuscate (verbose opts) p enc c
-                {-saveMMap dir pp-}
-                {-saveObfuscation dir obf-}
+                saveMMap dir pp
+                saveObfuscation dir obf
                 return (pp, obf)
             else do
                 when (verbose opts) $ pr "loading existing mmap"
@@ -122,7 +126,19 @@ main = runCommand $ \opts [fp] -> do
                 when (verbose opts) $ pr "loading existing obfuscation"
                 obf  <- loadObfuscation dir
                 return (pp, obf)
-        pp `seq` forceM (obf)
+        -- evaluate on the input or tests
+        case input opts of
+            Nothing -> do
+                pr "running tests"
+                ok <- ensure (evalEncodingTest obf pp) c ts
+                if ok then pr "ok" else pr "failed" >> exitFailure
+            Just str -> do
+                when (length str /= n) $ do
+                    printf "incorrect size input! expected %d bits got %d\n" n (length str)
+                    exitFailure
+                pr ("evaluating on input x=" ++ str)
+                let res = evalEncoding obf pp c (readBitstring str)
+                pr ("result=" ++ show res)
 
     -- cleanup
     stopGlobalPool
