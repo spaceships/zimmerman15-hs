@@ -10,8 +10,7 @@ import Zim14.Sym
 import Zim14.Util (b2i)
 
 import CLT13.Rand
-import CLT13.Util (pmap, forceM)
-import qualified CLT13 as CLT
+import CLT13.Util (pmap)
 
 import Control.DeepSeq (NFData)
 import Control.Monad
@@ -88,9 +87,9 @@ obfuscate verbose (Params {..}) encode c = do
 
         get C_ = let yix  = pow [Y] (ydeg c)
                      rest = mconcat $ do
-                         (i, xdeg) <- zip [0..n-1] (xdegs c)
-                         let xi0 = pow [X i False] xdeg
-                             xi1 = pow [X i True]  xdeg
+                         i <- [0..n-1]
+                         let xi0 = pow [X i False] (xdeg c i)
+                             xi1 = pow [X i True]  (xdeg c i)
                              zix = pow1 [Z i]
                          return $ mconcat [xi0, xi1, zix]
                      cix = yix <> rest
@@ -100,8 +99,7 @@ obfuscate verbose (Params {..}) encode c = do
                              | i1 > i2   = get (S_ i2 i1 b1 b2)
                              | otherwise = encode 1 1 (bitFill n i1 i2 b1 b2)
 
-    m <- randIO (runGetter verbose n m get)
-    return m
+    randIO (runGetter verbose n m get)
 
 -- runGetter takes instructions how to generate each element, generates them,
 -- them returns a big ol map of them

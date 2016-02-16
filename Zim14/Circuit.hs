@@ -48,7 +48,7 @@ degree c ref z = foldCirc f ref c
     {-f (Add _ _) [x,y] = max x y-}
     {-f (Sub _ _) [x,y] = max x y-}
     f (Mul _ _) [x,y] = x + y
-    f x [] = if eq x z then 1 else 0
+    f x _ = if eq x z then 1 else 0
 
     eq (Input x) (Input y) = x == y
     eq (Const _) (Const _) = True
@@ -61,8 +61,9 @@ evalMod c xs ys q = foldCirc eval (outRef c) c
     eval (Add _ _) [x,y] = x + y `mod` q
     eval (Sub _ _) [x,y] = x - y `mod` q
     eval (Mul _ _) [x,y] = x * y `mod` q
-    eval (Input id)   [] = xs !! id
-    eval (Const id)   [] = ys !! id
+    eval (Input i)   [] = xs !! i
+    eval (Const i)   [] = ys !! i
+    eval _            _  = error "[evalMod] weird input"
 
 -- note: inputs are little endian: [x0, x1, ..., xn]
 plainEval :: Circuit -> [Int] -> Int
@@ -71,13 +72,14 @@ plainEval c xs = b2i (foldCirc eval (outRef c) c /= 0) -- this is how the tests 
     eval (Add _ _) [x,y] = x + y
     eval (Sub _ _) [x,y] = x - y
     eval (Mul _ _) [x,y] = x * y
-    eval (Input id)   [] = xs !! id
-    eval (Const id)   [] = fromIntegral (consts c !! id)
+    eval (Input i)    [] = xs !! i
+    eval (Const i)    [] = fromIntegral (consts c !! i)
+    eval _            _  = error "[plainEval] weird input"
 
 ensure :: Evaluator -> Circuit -> [TestCase] -> IO Bool
-ensure eval c ts = and <$> mapM ensure (zip [0..] ts)
+ensure eval c ts = and <$> mapM ensure' (zip [(0::Int)..] ts)
   where
-    ensure (i, (inps, res)) = do
+    ensure' (i, (inps, res)) = do
         if eval c (reverse inps) == res then
             return True
         else do
