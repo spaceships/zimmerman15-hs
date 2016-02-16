@@ -66,9 +66,10 @@ main = runCommand $ \opts args -> do
     let [fp] = args
     (c, ts) <- parseCirc <$> readFile fp
 
-    let λ   = lambda opts
-        dir = dirName fp λ
-    p@(Params {..}) <- params λ c
+    p@(Params {..}) <- params (lambda opts) c
+    when (verbose opts) $ pr (show p)
+
+    let dir = dirName fp λ
 
     -- evaluate plaintext circuit
     when (plaintext opts) $ do
@@ -88,7 +89,7 @@ main = runCommand $ \opts args -> do
     if fakeMMap opts then do
         let dir' = dir ++ ".fake"
         exists <- doesDirectoryExist dir'
-        obf <- obfuscate (verbose opts) p fakeEncode λ c
+        obf <- obfuscate (verbose opts) p fakeEncode c
         when (verbose opts) $ pr "obfuscating"
         forceM obf
         case input opts of
@@ -108,11 +109,11 @@ main = runCommand $ \opts args -> do
         (pp, obf) <-
             if not exists || fresh opts then do
                 let ix       = indexer n
-                    topLevel = topLevelCLTIndex ix n (ydeg c) (xdegs c)
+                    topLevel = topLevelCLTIndex c
                 mmap <- CLT.setup (verbose opts) λ d (nindices n) topLevel
                 let enc x y i = CLT.encode [x,y] (ix i) mmap
                 when (verbose opts) $ pr "obfuscating"
-                obf <- obfuscate (verbose opts) p enc λ c
+                obf <- obfuscate (verbose opts) p enc c
                 forceM obf
                 let pp = CLT.publicParams mmap
                 saveMMap dir pp

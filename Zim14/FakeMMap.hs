@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Zim14.FakeMMap where
 
@@ -16,6 +17,7 @@ import Control.DeepSeq (NFData)
 import Data.Map ((!))
 import Data.Monoid
 import GHC.Generics (Generic)
+import Text.Printf
 import qualified Data.Map.Strict as M
 
 import Debug.Trace
@@ -24,7 +26,10 @@ data FakeEncoding = FakeEncoding {
     ev  :: Integer,
     chk :: Integer,
     ix  :: Index
-} deriving (Show, Eq, Generic, NFData)
+} deriving (Eq, Generic, NFData)
+
+instance Show FakeEncoding where
+    show (FakeEncoding {..}) = printf "[%d, %d](%s)" ev chk (show ix)
 
 fakeEncode :: Integer -> Integer -> Index -> Rand FakeEncoding
 fakeEncode x y ix = return $ FakeEncoding x y ix
@@ -35,11 +40,18 @@ fakeEvalTest obf p c xs = b2i $ not ((ev z == 0) && (chk z == 0))
     z = fakeEval obf p c (map i2b xs)
 
 fakeEval :: Obfuscation FakeEncoding -> Params -> Circuit -> [Bool] -> FakeEncoding
-fakeEval obf p c xs = z
+fakeEval obf p@(Params {..}) c xs =
+    if not (tl == tl') then
+        trace ("top level index not reached: " ++ show (M.difference tl' tl))
+        trace ("z = " ++ show z) z
+    else
+        z
   where
-    n  = ninputs c
+    tl  = topLevelCLTIndex c
+    tl' = indexer n (ix z)
 
-    chat = foldCirc eval (outRef c) c
+    chat = let chat = foldCirc eval (outRef c) c
+           in trace ("chat = " ++ show chat) chat
 
     σ = fakeProd p [ obf ! S_ i1 i2 (xs!!i1) (xs!!i2)
                    | i1 <- [0..n-1], i2 <- [0..n-1], i1 < i2
@@ -76,14 +88,15 @@ fakeAdd obf p x y = FakeEncoding ev' chk' target
     ev'  = ev x'  + ev y'  `mod` n_ev p
     chk' = chk x' + chk y' `mod` n_chk p
 
+
 fakeSub :: Obfuscation FakeEncoding -> Params -> FakeEncoding -> FakeEncoding -> FakeEncoding
 fakeSub obf p x y = FakeEncoding ev' chk' target
   where
     target = ix x <> ix y
     x' = raise obf p target x
     y' = raise obf p target y
-    ev'  = ev x'  - ev y'  `mod` n_ev p
-    chk' = chk x' - chk y' `mod` n_chk p
+    ev'  = ev x  - ev y  `mod` n_ev p
+    chk' = chk x - chk y `mod` n_chk p
 
 -- raise x to the index target by multiplying by powers of U_ and V_
 raise :: Obfuscation FakeEncoding -> Params -> Index -> FakeEncoding -> FakeEncoding

@@ -39,8 +39,17 @@ test-suite test
     type:                 exitcode-stdio-1.0
     main-is:              Tests.hs
     build-depends:        base >=4.8 && <4.9
-                        , clt13
-                        , containers
                         , QuickCheck
                         , test-framework
                         , test-framework-quickcheck2
+                        , bytestring
+                        , cereal
+                        , clt13
+                        , containers
+                        , deepseq
+                        , directory >= 1.2.5
+                        , mtl
+                        , options
+                        , parallel-io
+                        , parsec
+                        , split

@@ -45,6 +45,8 @@ degree c ref z = foldCirc f ref c
   where
     f (Add _ _) [x,y] = x + y
     f (Sub _ _) [x,y] = x + y
+    {-f (Add _ _) [x,y] = max x y-}
+    {-f (Sub _ _) [x,y] = max x y-}
     f (Mul _ _) [x,y] = x + y
     f x [] = if eq x z then 1 else 0
 
@@ -103,6 +105,9 @@ nconsts = length . consts
 
 ydeg :: Circuit -> Int
 ydeg c = degree c (outRef c) (Const (-1))
+
+xdeg :: Circuit -> Int -> Int
+xdeg c i = xdegs c !! i
 
 xdegs :: Circuit -> [Int]
 xdegs c = pmap (degree c (outRef c) . Input) [0 .. ninputs c - 1]

@@ -16,6 +16,7 @@ import qualified CLT13 as CLT
 import Control.DeepSeq (NFData)
 import Control.Monad
 import Data.Monoid
+import Text.Printf
 import qualified Data.Map.Strict as M
 
 import Debug.Trace
@@ -26,9 +27,14 @@ data Params = Params {
     n     :: Int,
     m     :: Int,
     d     :: Int,
+    λ     :: Int,
     n_ev  :: Integer,
     n_chk :: Integer
 }
+
+instance Show Params where
+    show (Params {..}) =
+        printf "Params: n=%d m=%d d=%d λ=%d n_ev=%d n_chk=%d" n m d λ n_ev n_chk
 
 type N = (Integer, Integer) -- (N_ev, N_chk)
 
@@ -36,21 +42,22 @@ type Encoder a = Integer -> Integer -> Index -> Rand a
 
 params :: Int -> Circuit -> IO Params
 params λ c = do
-    n_chk <- randIO (randInteger λ)
-    n_ev  <- randIO (randInteger λ)
+    [n_chk, n_ev] <- randIO (randPrimes 2 λ)
     return $ Params {
         n     = ninputs c,
         m     = nconsts c,
         d     = depth c,
+        λ     = λ,
         n_ev  = n_ev,
         n_chk = n_chk
     }
 
-obfuscate :: NFData a => Bool -> Params -> Encoder a -> Int -> Circuit -> IO (Obfuscation a)
-obfuscate verbose (Params {..}) encode λ c = do
+obfuscate :: NFData a => Bool -> Params -> Encoder a -> Circuit -> IO (Obfuscation a)
+obfuscate verbose (Params {..}) encode c = do
     αs <- map fst <$> randIO (randInvs n n_chk)
     βs <- map fst <$> randIO (randInvs m n_chk)
     let c_val = evalMod c αs βs n_chk
+    when verbose $ traceM (printf "top-level check val = %d" c_val)
 
     γ0s <- map fst <$> randIO (randInvs n n_chk)
     γ1s <- map fst <$> randIO (randInvs n n_chk)

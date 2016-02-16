@@ -7,11 +7,15 @@
 
 module Zim14.Index where
 
+import Zim14.Circuit
+import Zim14.Util (b2i)
+
 import qualified CLT13 as CLT
 
 import Control.DeepSeq (NFData)
 import Data.Monoid
 import GHC.Generics (Generic)
+import Text.Printf
 import qualified Data.Map.Strict as M
 
 data IndexSym = Y
@@ -19,11 +23,23 @@ data IndexSym = Y
               | Z Int
               | W Int
               | S Int Bool Int
-              deriving (Show, Eq, Ord, Generic, NFData)
+              deriving (Eq, Ord, Generic, NFData)
+
+instance Show IndexSym where
+    show Y           = "Y"
+    show (X i b)     = printf "X_{%d,%d}" i (b2i b :: Int)
+    show (Z i)       = printf "Z_%d" i
+    show (W i)       = printf "W_%d" i
+    show (S i1 b i2) = printf "S_{%d,%d,%d}" i1 (b2i b :: Int) i2
 
 type Power = Int
 newtype Index = Index { getIndex :: M.Map IndexSym Power
-                      } deriving (Show, Eq, Ord, Generic, NFData)
+                      } deriving (Eq, Ord, Generic, NFData)
+
+instance Show Index where
+    show = unwords . map showElem . M.toList . getIndex
+      where
+        showElem (i,p) = printf "%s^%d" (show i) p
 
 instance Monoid Index where
     mappend a b = Index (M.unionWith (+) (getIndex a) (getIndex b))
@@ -102,14 +118,16 @@ sindices n = [ start 0 .. start n - 1 ]
     width   = 2*n-1
     start i = i*width + 4*n + 1
 
-nindices :: Int -> Int
-nindices n = n*(2*n-1) + 4*n + 1
+numCLTIndices :: Int -> Int
+numCLTIndices n = n*(2*n-1) + 4*n + 1
 
-topLevelCLTIndex :: Indexer -> Int -> Int -> [Int] -> CLT.IndexSet
-topLevelCLTIndex ix n ydeg xdegs = CLT.indexUnions (yix : xixs ++ zixs ++ wixs ++ sixs)
+topLevelCLTIndex :: Circuit -> CLT.IndexSet
+topLevelCLTIndex c = CLT.indexUnions (yix : xixs ++ zixs ++ wixs ++ sixs)
   where
-    yix  = ix (pow Y ydeg)
-    xixs = [ix (pow (X i b) d) | i <- [0..n-1] | d <- xdegs , b <- [False, True]]
+    n    = ninputs c
+    ix   = indexer n
+    yix  = ix (pow Y (ydeg c))
+    xixs = [ix (pow (X i b) d) | i <- [0..n-1] | d <- (xdegs c), b <- [False, True]]
     zixs = [ix (pow (Z i)   1) | i <- [0..n-1]]
     wixs = [ix (pow (W i)   1) | i <- [0..n-1]]
     sixs = map CLT.pow1 [sindices n]
@@ -126,6 +144,17 @@ pow1 = flip pow 1
 -- Return the symbols from A that aren't in B, and their difference in Power.
 -- Assumes that b is always smaller power than a
 indexDiff :: Index -> Index -> Index
-indexDiff a b = Index $ M.differenceWith f (getIndex a) (getIndex b)
+indexDiff a b = Index $ filterZeroes $ M.differenceWith f (getIndex a) (getIndex b)
   where
     f x y = let z = x - y in if z <= 0 then Nothing else Just z
+    filterZeroes = M.filter (> 0)
+
+topLevelIndex :: Circuit -> Index
+topLevelIndex c = mconcat $ map pow1 (y : xs ++ zs ++ ws ++ ss)
+  where
+    n  = ninputs c
+    y  = pow Y (ydeg c)
+    xs = [ pow (X i b) (xdeg c i) | i <- [0..n-1], b <- [False, True] ]
+    zs = [ pow1 (Z i) | i <- [0..n-1] ]
+    ws = [ pow1 (W i) | i <- [0..n-1] ]
+    ss = [ (S i b j)  | i <- [0..n-1], j <- [0..n-1], i < j ]
