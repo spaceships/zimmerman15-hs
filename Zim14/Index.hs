@@ -38,7 +38,6 @@ instance Show IndexSym where
     show (Z i)       = printf "Z_%d" i
     show (W i)       = printf "W_%d" i
     show (F i j)     = printf "F_{%d,%d}" i j
-    {-show (S i1 b i2) = printf "S_{%d,%d,%d}" i1 (b2i b :: Int) i2-}
 
 type Power = Int
 newtype Index = Index { getIndex :: M.Map IndexSym Power
@@ -56,20 +55,18 @@ instance Monoid Index where
 accumIndex :: (IndexSym -> a -> a) -> Index -> a -> a
 accumIndex f ix x = foldr f x indices
   where
-    indices = concatMap (uncurry (flip replicate)) $ M.toList (getIndex ix)
+    indices = concatMap (\(isym,p) -> replicate p isym) $ M.toList (getIndex ix)
 
 --------------------------------------------------------------------------------
 -- mucking about with straddling sets
 
 getS :: Int -> Int -> Bool -> Int -> [IndexSym]
-getS _ i False j =
-    if j == 0
-       then [F i 0]
-       else [F i (2*j-1), F i (2*j)]
-getS n i True j =
-    if j == n-1
-       then [F i (2*j)]
-       else [F i (2*j), F i (2*j+1)]
+getS _ i False j
+    | j == 0    = [F i 0]
+    | otherwise = [F i (2*j-1), F i (2*j)]
+getS n i True j
+    | j == n-1  = [F i (2*j)]
+    | otherwise = [F i (2*j), F i (2*j+1)]
 
 bitCommit :: Int -> Int -> Bool -> Index
 bitCommit n i b = pow1 (getS n i b i)
@@ -119,7 +116,7 @@ topLevelIndex c = mconcat [y, xs, zs, ws, ss]
     xs = mconcat [ pow [X i b] (xdeg c i) | i <- [0..n-1], b <- [False, True] ]
     zs = pow1 [ Z i   | i <- [0..n-1] ]
     ws = pow1 [ W i   | i <- [0..n-1] ]
-    ss = pow1 [ F i j | i <- [0..n-1], j <- [0..2*n-1] ]
+    ss = pow1 [ F i j | i <- [0..n-1], j <- [0..2*n-2] ]
 
 topLevelCLTIndex :: Circuit -> CLT.IndexSet
 topLevelCLTIndex c = indexer (ninputs c) (topLevelIndex c)
@@ -135,8 +132,14 @@ pow1 = flip pow 1
 
 -- Return the symbols from A that aren't in B, and their difference in Power.
 -- Assumes that b is always smaller power than a
-indexDiff :: Index -> Index -> Index
-indexDiff a b = Index $ filterZeroes $ M.differenceWith f (getIndex a) (getIndex b)
+indexMinus :: Index -> Index -> Index
+indexMinus a b = Index $ filterZeroes $ M.differenceWith f (getIndex a) (getIndex b)
   where
     f x y = let z = x - y in if z <= 0 then Nothing else Just z
     filterZeroes = M.filter (> 0)
+
+indexDiff :: Index -> Index -> Index
+indexDiff a b = indexMinus a b <> indexMinus b a
+
+indexEq :: Index -> Index -> Bool
+indexEq a b = M.null $ getIndex (indexDiff a b)

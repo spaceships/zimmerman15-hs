@@ -55,8 +55,8 @@ obfuscate :: NFData a => Bool -> Params -> Encoder a -> Circuit -> IO (Obfuscati
 obfuscate verbose (Params {..}) encode c = do
     αs <- map fst <$> randIO (randInvs n n_chk)
     βs <- map fst <$> randIO (randInvs m n_chk)
-    let c_val = evalMod c αs βs n_chk
-    when verbose $ traceM (printf "top-level check val = %d" c_val)
+    let chk_val = evalMod c αs βs n_chk
+    when verbose $ traceM (printf "top-level check val = %d" chk_val)
 
     γ0s <- map fst <$> randIO (randInvs n n_chk)
     γ1s <- map fst <$> randIO (randInvs n n_chk)
@@ -74,29 +74,29 @@ obfuscate verbose (Params {..}) encode c = do
         get V_       = encode 1 1 (pow1 [Y])
 
         get (Z_ i b) = let (δs, γs) = if b then (δ1s, γ1s) else (δ0s, γ0s)
-                           xix = pow [X i (not b)] (xdegs c !! i)
+                           xix = pow [X i (not b)] (xdeg c i)
+                           zix = pow1 [Z i]
                            wix = pow1 [W i]
                            bc  = bitCommit n i b
-                           zix = mconcat [xix, wix, bc]
-                       in encode (δs !! i) (γs !! i) zix
+                           ix  = xix <> zix <> wix <> bc
+                       in encode (δs !! i) (γs !! i) ix
 
         get (W_ i b) = let γs  = if b then γ1s else γ0s
+                           wix = pow1 [W i]
                            bc  = bitCommit n i b
-                           wix = bc <> pow1 [W i]
-                       in encode 0 (γs !! i) wix
+                           ix  = wix <> bc
+                       in encode 0 (γs !! i) ix
 
         get C_ = let yix  = pow [Y] (ydeg c)
                      rest = mconcat $ do
                          i <- [0..n-1]
-                         let xi0 = pow [X i False] (xdeg c i)
-                             xi1 = pow [X i True]  (xdeg c i)
+                         let xix = pow [X i False, X i True] (xdeg c i)
                              zix = pow1 [Z i]
-                         return $ mconcat [xi0, xi1, zix]
-                     cix = yix <> rest
-                 in encode 0 c_val cix
+                         return $ xix <> zix
+                     ix = yix <> rest
+                 in encode 0 chk_val ix
 
-        get (S_ i1 i2 b1 b2) | i1 == i2  = error "[get] S_ undefined when i1 = i2"
-                             | i1 > i2   = get (S_ i2 i1 b1 b2)
+        get (S_ i1 i2 b1 b2) | i1 >= i2  = error "[get] S_ undefined when i1 >= i2"
                              | otherwise = encode 1 1 (bitFill n i1 i2 b1 b2)
 
     randIO (runGetter verbose n m get)
@@ -122,7 +122,8 @@ runGetter verbose n m get = do
         c  = tr "generating c"  $ g C_
         ss = tr "generating ss" $ [ g (S_ i1 i2 b1 b2)
                                   | i1 <- is, i2 <- is
-                                  , b1 <- bs, b2 <- bs, i1 /= i2
+                                  , b1 <- bs, b2 <- bs
+                                  , i1 < i2
                                   ]
 
         actions = xs ++ us ++ ys ++ [v] ++ zs ++ ws ++ [c] ++ ss

@@ -43,10 +43,8 @@ depth c = foldCirc f (outRef c) c
 degree :: Circuit -> Ref -> Op -> Int
 degree c ref z = foldCirc f ref c
   where
-    f (Add _ _) [x,y] = x + y
-    f (Sub _ _) [x,y] = x + y
-    {-f (Add _ _) [x,y] = max x y-}
-    {-f (Sub _ _) [x,y] = max x y-}
+    f (Add _ _) [x,y] = max x y
+    f (Sub _ _) [x,y] = max x y
     f (Mul _ _) [x,y] = x + y
     f x _ = if eq x z then 1 else 0
 
@@ -83,8 +81,8 @@ ensure eval c ts = and <$> mapM ensure' (zip [(0::Int)..] ts)
         if eval c (reverse inps) == res then
             return True
         else do
-            putStrLn ("\x1b[1;41m" ++ "test " ++ show i ++ " failed: " ++
-                      concatMap show inps ++ " /= " ++ show res ++ "\x1b[0m")
+            putStrLn (red ("test " ++ show i ++ " failed: " ++
+                            concatMap show inps ++ " /= " ++ show res))
             return False
 
 foldCirc :: (Op -> [a] -> a) -> Ref -> Circuit -> a

@@ -8,7 +8,7 @@ import Zim14.Circuit
 import Zim14.Index
 import Zim14.Obfuscate (Obfuscation, Params(..))
 import Zim14.Sym
-import Zim14.Util (i2b, b2i)
+import Zim14.Util (i2b, b2i, red)
 
 import CLT13.Rand
 
@@ -17,7 +17,6 @@ import Data.Map ((!))
 import Data.Monoid
 import GHC.Generics (Generic)
 import Text.Printf
-import qualified Data.Map.Strict as M
 
 import Debug.Trace
 
@@ -40,27 +39,12 @@ fakeEvalTest obf p c xs = b2i $ not ((ev z == 0) && (chk z == 0))
 
 fakeEval :: Obfuscation FakeEncoding -> Params -> Circuit -> [Bool] -> FakeEncoding
 fakeEval obf p@(Params {..}) c xs =
-    if not (tl == tl') then
-        trace ("top level index not reached: " ++ show (M.difference tl' tl))
+    if not (indexEq tl tl') then
+        trace (red ("top level index not reached. missing indices: " ++ show diff))
         trace ("z = " ++ show z) z
     else
         z
   where
-    tl  = topLevelCLTIndex c
-    tl' = indexer n (ix z)
-
-    chat = let res = foldCirc eval (outRef c) c
-           in trace ("chat = " ++ show res) res
-
-    σ = fakeProd p [ obf ! S_ i1 i2 (xs!!i1) (xs!!i2)
-                   | i1 <- [0..n-1], i2 <- [0..n-1], i1 < i2
-                   ]
-
-    zhat = fakeProd p [ obf ! Z_ i (xs!!i) | i <- [0..n-1] ]
-    what = fakeProd p [ obf ! W_ i (xs!!i) | i <- [0..n-1] ]
-
-    z = fakeMul p (fakeSub obf p (fakeMul p chat zhat) (fakeMul p (obf!C_) what)) σ
-
     eval :: Op -> [FakeEncoding] -> FakeEncoding
     eval (Input i)    [] = let b = (xs !! i) in obf ! X_ i b
     eval (Const i)    [] = obf ! Y_ i
@@ -68,6 +52,22 @@ fakeEval obf p@(Params {..}) c xs =
     eval (Add _ _) [x,y] = fakeAdd obf p x y
     eval (Sub _ _) [x,y] = fakeSub obf p x y
     eval _         _     = error "[fakeEval] weird input"
+
+    chat = foldCirc eval (outRef c) c
+
+    σ = fakeProd p [ obf ! S_ i1 i2 (xs!!i1) (xs!!i2)
+                   | i1 <- [0..n-1], i2 <- [0..n-1], i1 < i2
+                   ]
+
+    zhat = fakeProd p [ obf ! Z_ i (xs!!i) | i <- [0..n-1] ]
+
+    what = fakeProd p [ obf ! W_ i (xs!!i) | i <- [0..n-1] ]
+
+    z = fakeMul p (fakeSub obf p (fakeMul p chat zhat) (fakeMul p (obf!C_) what)) σ
+
+    tl   = topLevelIndex c
+    tl'  = ix z
+    diff = indexDiff tl tl'
 
 fakeMul :: Params -> FakeEncoding -> FakeEncoding -> FakeEncoding
 fakeMul p x y = FakeEncoding ev' chk' ix'
@@ -82,7 +82,7 @@ fakeProd p = foldr1 (fakeMul p)
 fakeAdd :: Obfuscation FakeEncoding -> Params -> FakeEncoding -> FakeEncoding -> FakeEncoding
 fakeAdd obf p x y = FakeEncoding ev' chk' target
   where
-    target = ix x <> ix y
+    target = ix x <> indexMinus (ix y) (ix x)
     x' = raise obf p target x
     y' = raise obf p target y
     ev'  = ev x'  + ev y'  `mod` n_ev p
@@ -92,7 +92,7 @@ fakeAdd obf p x y = FakeEncoding ev' chk' target
 fakeSub :: Obfuscation FakeEncoding -> Params -> FakeEncoding -> FakeEncoding -> FakeEncoding
 fakeSub obf p x y = FakeEncoding ev' chk' target
   where
-    target = ix x <> ix y
+    target = ix x <> indexMinus (ix y) (ix x)
     x' = raise obf p target x
     y' = raise obf p target y
     ev'  = ev x'  - ev y'  `mod` n_ev p
@@ -103,6 +103,7 @@ raise :: Obfuscation FakeEncoding -> Params -> Index -> FakeEncoding -> FakeEnco
 raise obf p target x = accumIndex accum diff x
   where
     diff = indexDiff (ix x) target
+
     accum (X i b) = fakeMul p (obf!U_ i b)
     accum Y       = fakeMul p (obf!V_)
-    accum oops    = error ("[raise] unexpected index " ++ show oops)
+    accum _       = id

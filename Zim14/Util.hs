@@ -24,3 +24,6 @@ num2bits x = reverse bs
 
 readBitstring :: String -> [Bool]
 readBitstring = map (== '1')
+
+red :: String -> String
+red s = "\x1b[1;41m" ++ s ++ "\x1b[0m"
