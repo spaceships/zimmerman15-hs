@@ -66,39 +66,39 @@ obfuscate verbose (Params {..}) encode c = do
     δ1s <- map fst <$> randIO (randInvs n n_ev)
 
     -- get tells how to derive each element, and sequenceGetter actually does it
-    let get (X_ i b) = encode (b2i b) (αs !! i) (pow1 (X i b))
+    let get (X_ i b) = encode (b2i b) (αs !! i) (pow1 [X i b])
 
-        get (U_ i b) = encode 1 1 (pow1 (X i b))
+        get (U_ i b) = encode 1 1 (pow1 [X i b])
 
-        get (Y_ j)   = encode (consts c !! j) (βs !! j) (pow1 Y)
+        get (Y_ j)   = encode (consts c !! j) (βs !! j) (pow1 [Y])
 
-        get V_       = encode 1 1 (pow1 Y)
+        get V_       = encode 1 1 (pow1 [Y])
 
         get (Z_ i b) = let (δs, γs) = if b then (δ1s, γ1s) else (δ0s, γ0s)
-                           xix = pow (X i (not b)) (xdegs c !! i)
-                           wix = pow1 (W i)
-                           bc  = bitCommit i b
+                           xix = pow [X i (not b)] (xdegs c !! i)
+                           wix = pow1 [W i]
+                           bc  = bitCommit n i b
                            zix = mconcat [xix, wix, bc]
                        in encode (δs !! i) (γs !! i) zix
 
         get (W_ i b) = let γs  = if b then γ1s else γ0s
-                           bc  = bitCommit i b
-                           wix = bc <> pow1 (W i)
+                           bc  = bitCommit n i b
+                           wix = bc <> pow1 [W i]
                        in encode 0 (γs !! i) wix
 
-        get C_ = let yix  = pow Y (ydeg c)
+        get C_ = let yix  = pow [Y] (ydeg c)
                      rest = mconcat $ do
                          (i, xdeg) <- zip [0..n-1] (xdegs c)
-                         let xi0 = pow (X i False) xdeg
-                             xi1 = pow (X i True)  xdeg
-                             zix = pow1 (Z i)
+                         let xi0 = pow [X i False] xdeg
+                             xi1 = pow [X i True]  xdeg
+                             zix = pow1 [Z i]
                          return $ mconcat [xi0, xi1, zix]
                      cix = yix <> rest
                  in encode 0 c_val cix
 
         get (S_ i1 i2 b1 b2) | i1 == i2  = error "[get] S_ undefined when i1 = i2"
                              | i1 > i2   = get (S_ i2 i1 b1 b2)
-                             | otherwise = encode 1 1 (bitFill i1 i2 b1 b2)
+                             | otherwise = encode 1 1 (bitFill n i1 i2 b1 b2)
 
     m <- randIO (runGetter verbose n m get)
     return m

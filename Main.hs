@@ -15,11 +15,9 @@ import qualified CLT13 as CLT
 
 import Control.Concurrent.ParallelIO (stopGlobalPool)
 import Control.Monad
-import Numeric
 import Options
 import System.Directory
 import System.Exit
-import System.IO
 import Text.Printf
 
 data MainOptions = MainOptions { fakeMMap  :: Bool
@@ -62,8 +60,8 @@ instance Options MainOptions where
                      , optionDescription = "Input as a bitstring."
                      })
 
-main = runCommand $ \opts args -> do
-    let [fp] = args
+main :: IO ()
+main = runCommand $ \opts [fp] -> do
     (c, ts) <- parseCirc <$> readFile fp
 
     p@(Params {..}) <- params (lambda opts) c
@@ -87,8 +85,6 @@ main = runCommand $ \opts args -> do
                 print res
 
     if fakeMMap opts then do
-        let dir' = dir ++ ".fake"
-        exists <- doesDirectoryExist dir'
         obf <- obfuscate (verbose opts) p fakeEncode c
         when (verbose opts) $ pr "obfuscating"
         forceM obf
@@ -110,7 +106,7 @@ main = runCommand $ \opts args -> do
             if not exists || fresh opts then do
                 let ix       = indexer n
                     topLevel = topLevelCLTIndex c
-                mmap <- CLT.setup (verbose opts) λ d (nindices n) topLevel
+                mmap <- CLT.setup (verbose opts) λ d (numIndices n) topLevel
                 let enc x y i = CLT.encode [x,y] (ix i) mmap
                 when (verbose opts) $ pr "obfuscating"
                 obf <- obfuscate (verbose opts) p enc c
@@ -125,7 +121,7 @@ main = runCommand $ \opts args -> do
                 when (verbose opts) $ pr "loading existing obfuscation"
                 obf  <- loadObfuscation dir
                 return (pp, obf)
-        forceM obf
+        pp `seq` forceM (obf)
     stopGlobalPool
 
 dirName :: FilePath -> Int -> FilePath

@@ -29,26 +29,25 @@ loadObfuscation dir = do
             case S.decode bs of
                 Left err -> error err
                 Right v  -> return (sym, v)
-    obfs <- parallelInterleaved $ map readEnc obfs
-    return $ M.fromList obfs
+    obfs' <- parallelInterleaved $ map readEnc obfs
+    return $ M.fromList obfs'
 
 saveMMap :: FilePath -> CLT.PublicParams -> IO ()
 saveMMap dir mmap = do
     createDirectoryIfMissing False dir
-    let write name elem = BS.writeFile (dir ++ "/mmap-" ++ name) (S.encode elem)
+    let write name x = BS.writeFile (dir ++ "/mmap-" ++ name) (S.encode x)
     write "x0"  $ CLT.modulus    mmap
     write "pzt" $ CLT.zeroTester mmap
     write "nu"  $ CLT.threshold  mmap
 
 loadMMap :: FilePath -> IO CLT.PublicParams
 loadMMap dir = do
-    fps <- listDirectory dir
-    let read name = do
+    let readSym name = do
             bs <- BS.readFile (dir ++ "/mmap-" ++ name)
             case S.decode bs of
                 Left err -> error err
                 Right v  -> return v
-    x0  <- read "x0"
-    pzt <- read "pzt"
-    nu  <- read "nu"
+    x0  <- readSym "x0"
+    pzt <- readSym "pzt"
+    nu  <- readSym "nu"
     return $ CLT.PublicParams x0 pzt nu

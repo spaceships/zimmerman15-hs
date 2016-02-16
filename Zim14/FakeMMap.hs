@@ -11,7 +11,6 @@ import Zim14.Sym
 import Zim14.Util (i2b, b2i)
 
 import CLT13.Rand
-import CLT13.Util (pmap)
 
 import Control.DeepSeq (NFData)
 import Data.Map ((!))
@@ -50,8 +49,8 @@ fakeEval obf p@(Params {..}) c xs =
     tl  = topLevelCLTIndex c
     tl' = indexer n (ix z)
 
-    chat = let chat = foldCirc eval (outRef c) c
-           in trace ("chat = " ++ show chat) chat
+    chat = let res = foldCirc eval (outRef c) c
+           in trace ("chat = " ++ show res) res
 
     σ = fakeProd p [ obf ! S_ i1 i2 (xs!!i1) (xs!!i2)
                    | i1 <- [0..n-1], i2 <- [0..n-1], i1 < i2
@@ -68,6 +67,7 @@ fakeEval obf p@(Params {..}) c xs =
     eval (Mul _ _) [x,y] = fakeMul p x y
     eval (Add _ _) [x,y] = fakeAdd obf p x y
     eval (Sub _ _) [x,y] = fakeSub obf p x y
+    eval _         _     = error "[fakeEval] weird input"
 
 fakeMul :: Params -> FakeEncoding -> FakeEncoding -> FakeEncoding
 fakeMul p x y = FakeEncoding ev' chk' ix'
@@ -95,14 +95,14 @@ fakeSub obf p x y = FakeEncoding ev' chk' target
     target = ix x <> ix y
     x' = raise obf p target x
     y' = raise obf p target y
-    ev'  = ev x  - ev y  `mod` n_ev p
-    chk' = chk x - chk y `mod` n_chk p
+    ev'  = ev x'  - ev y'  `mod` n_ev p
+    chk' = chk x' - chk y' `mod` n_chk p
 
 -- raise x to the index target by multiplying by powers of U_ and V_
 raise :: Obfuscation FakeEncoding -> Params -> Index -> FakeEncoding -> FakeEncoding
 raise obf p target x = accumIndex accum diff x
   where
     diff = indexDiff (ix x) target
-    accum (X i b) x = fakeMul p (obf!U_ i b) x
-    accum Y       x = fakeMul p (obf!V_)     x
-    accum oops    _ = error ("[raise] unexpected index " ++ show oops)
+    accum (X i b) = fakeMul p (obf!U_ i b)
+    accum Y       = fakeMul p (obf!V_)
+    accum oops    = error ("[raise] unexpected index " ++ show oops)
