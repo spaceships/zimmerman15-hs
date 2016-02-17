@@ -19,7 +19,7 @@ newtype CLT13 = CLT13 {
 } deriving (NFData, Generic, Serialize)
 
 instance Show CLT13 where
-    show _ = "[<clt13>]"
+    show x = if CLT.val (getCLT x) == 0 then "[0]" else "[<clt>]"
 
 -- cltEncode :: CLT.MMap -> Indexer -> (Integer -> Integer -> Index -> Rand CLT13)
 cltEncode :: CLT.MMap -> Indexer -> Encoder CLT13

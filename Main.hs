@@ -11,6 +11,7 @@ import Zim14.Obfuscate
 import Zim14.Serialize
 import Zim14.Util (pr, readBitstring)
 
+import CLT13.Rand
 import CLT13.Util (forceM)
 import qualified CLT13 as CLT
 
@@ -64,16 +65,12 @@ instance Options MainOptions where
 main :: IO ()
 main = runCommand $ \opts [fp] -> do
     (c, ts) <- parseCirc <$> readFile fp
-    p       <- params (lambda opts) c
-
-    when (verbose opts)   $ pr (show p)
     when (plaintext opts) $ evalPlaintextCircuit opts c ts
-
+    let λ = lambda opts
     if fake opts then
-        evalFakeCircuit opts p c ts
+        evalFakeCircuit opts λ c ts
     else
-        evalObfuscatedCircuit fp opts p c ts
-
+        evalObfuscatedCircuit fp opts λ c ts
     stopGlobalPool -- cleanup
 
 evalPlaintextCircuit :: MainOptions -> Circuit -> [TestCase] -> IO ()
@@ -81,7 +78,7 @@ evalPlaintextCircuit opts c ts = do
     case input opts of
         Nothing -> do
             pr "evaluating plaintext circuit tests"
-            ok <- ensure plainEval c ts
+            ok <- ensure (verbose opts) plainEval c ts
             if ok then pr "ok" else pr "failed"
         Just str -> do
             when (length str /= ninputs c) $ do
@@ -92,16 +89,18 @@ evalPlaintextCircuit opts c ts = do
             let res = plainEval c (readBitstring str)
             print res
 
-evalFakeCircuit :: MainOptions -> Params -> Circuit -> [TestCase] -> IO ()
-evalFakeCircuit opts p c ts = do
+evalFakeCircuit :: MainOptions -> Int -> Circuit -> [TestCase] -> IO ()
+evalFakeCircuit opts λ c ts = do
     let n = ninputs c
+    [n_ev, n_chk] <- randIO (randPrimes 2 λ)
+    let p = Params n_ev n_chk
     obf <- obfuscate (verbose opts) p fakeEncode c
     when (verbose opts) $ pr "obfuscating"
     forceM obf
     case input opts of
         Nothing -> do
             pr "running tests"
-            ok <- ensure (fakeEval obf p) c ts
+            ok <- ensure (verbose opts) (fakeEval obf p) c ts
             if ok then pr "ok" else pr "failed" >> exitFailure
         Just str -> do
             when (length str /= n) $ do
@@ -111,18 +110,23 @@ evalFakeCircuit opts p c ts = do
             let res = fakeEval obf p c (readBitstring str)
             pr ("result=" ++ show res)
 
-evalObfuscatedCircuit :: FilePath -> MainOptions -> Params -> Circuit -> [TestCase] -> IO ()
-evalObfuscatedCircuit fp opts p@(Params {..}) c ts = do
+evalObfuscatedCircuit :: FilePath -> MainOptions -> Int -> Circuit -> [TestCase] -> IO ()
+evalObfuscatedCircuit fp opts λ c ts = do
     -- obfuscate or load an existing obfuscation
     let dir = dirName fp λ
+        n   = ninputs c
+        d   = depth c
     (pp, obf) <- do
         exists <- doesDirectoryExist dir
         if not exists || fresh opts then do
-            mmap <- CLT.setup (verbose opts) (λ+d) d (numIndices n) (topLevelCLTIndex c)
+            {-mmap <- CLT.setup (verbose opts) (λ+d) (d+3) (numIndices c) (topLevelCLTIndex c)-}
+            mmap <- CLT.setup (verbose opts) λ (d+3) (numIndices c) (topLevelCLTIndex c)
             let pp  = CLT.publicParams mmap
                 enc = cltEncode mmap (indexer c)
+                n_ev  = CLT.gs mmap !! 0
+                n_chk = CLT.gs mmap !! 1
             when (verbose opts) $ pr "obfuscating"
-            obf <- obfuscate (verbose opts) p enc c
+            obf <- obfuscate (verbose opts) (Params n_ev n_chk) enc c
             saveMMap dir pp
             saveObfuscation dir obf
             return (pp, obf)
@@ -137,7 +141,7 @@ evalObfuscatedCircuit fp opts p@(Params {..}) c ts = do
     case input opts of
         Nothing -> do
             pr "running tests"
-            ok <- ensure (cltEval obf pp) c ts
+            ok <- ensure (verbose opts) (cltEval obf pp) c ts
             if ok then pr "ok" else pr "failed" >> exitFailure
         Just str -> do
             when (length str /= n) $ do

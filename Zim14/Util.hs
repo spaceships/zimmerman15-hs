@@ -27,3 +27,7 @@ readBitstring = map (== '1')
 
 red :: String -> String
 red s = "\x1b[1;41m" ++ s ++ "\x1b[0m"
+
+infixl 5 %
+(%) :: Integral a => a -> a -> a
+x % q = mod x q

@@ -16,4 +16,5 @@ data Encoding a = Encoding {
 } deriving (Eq, Generic, NFData, Serialize)
 
 instance Show a => Show (Encoding a) where
-    show enc = printf "%s(%s)" (show (val enc)) (show (ix enc))
+    {-show enc = printf "%s(%s)" (show (val enc)) (show (ix enc))-}
+    show enc = show (val enc)

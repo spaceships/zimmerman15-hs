@@ -102,8 +102,8 @@ indexer c = M.mapKeys (m!) . getIndex
 --------------------------------------------------------------------------------
 -- functions to get listing of CLT.Indices based on n
 
-numIndices :: Int -> Int
-numIndices n = n*(2*n-1) + 4*n + 1
+numIndices :: Circuit -> Int
+numIndices c = M.size $ getIndex $ topLevelIndex c
 
 topLevelIndex :: Circuit -> Index
 topLevelIndex c = mconcat [y, xs, zs, ws, ss]
@@ -136,7 +136,10 @@ indexMinus a b = Index $ filterZeroes $ M.differenceWith f (getIndex a) (getInde
     filterZeroes = M.filter (> 0)
 
 indexDiff :: Index -> Index -> Index
-indexDiff a b = indexMinus a b <> indexMinus b a
+indexDiff a b = indexUnion (indexMinus a b) (indexMinus b a)
 
 indexEq :: Index -> Index -> Bool
 indexEq a b = M.null $ getIndex (indexDiff a b)
+
+indexUnion :: Index -> Index -> Index
+indexUnion a b = Index $ M.unionWith max (getIndex a) (getIndex b)

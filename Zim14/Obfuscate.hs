@@ -24,36 +24,21 @@ import Debug.Trace
 type Obfuscation a = M.Map Sym (Encoding a)
 
 data Params = Params {
-    n     :: Int,
-    m     :: Int,
-    d     :: Int,
-    λ     :: Int,
     n_ev  :: Integer,
     n_chk :: Integer
 }
 
 instance Show Params where
     show (Params {..}) =
-        printf "Params: n=%d m=%d d=%d λ=%d n_ev=%d n_chk=%d" n m d λ n_ev n_chk
-
-type N = (Integer, Integer) -- (N_ev, N_chk)
+        printf "Params: n_ev=%d n_chk=%d" n_ev n_chk
 
 type Encoder a = Integer -> Integer -> Index -> Rand a
 
-params :: Int -> Circuit -> IO Params
-params λ c = do
-    [n_chk, n_ev] <- randIO (randPrimes 2 λ)
-    return $ Params {
-        n     = ninputs c,
-        m     = nconsts c,
-        d     = depth c,
-        λ     = λ,
-        n_ev  = n_ev,
-        n_chk = n_chk
-    }
-
 obfuscate :: NFData a => Bool -> Params -> Encoder a -> Circuit -> IO (Obfuscation a)
 obfuscate verbose (Params {..}) encode' c = do
+    let n = ninputs c
+        m = nconsts c
+
     αs <- map fst <$> randIO (randInvs n n_chk)
     βs <- map fst <$> randIO (randInvs m n_chk)
     let chk_val = evalMod c αs βs n_chk

@@ -39,6 +39,9 @@ depth c = foldCirc f (outRef c) c
     f (Const _) [] = 0
     f _         xs = maximum xs + 1
 
+{-multDepth :: Circuit -> Int-}
+{-multDepth c = foldCirc f (outRef c) c-}
+
 degree :: Circuit -> Ref -> Op -> Int
 degree c ref z = foldCirc f ref c
   where
@@ -55,9 +58,9 @@ degree c ref z = foldCirc f ref c
 evalMod :: Integral a => Circuit -> [a] -> [a] -> a -> a
 evalMod c xs ys q = foldCirc eval (outRef c) c
   where
-    eval (Add _ _) [x,y] = x + y `mod` q
-    eval (Sub _ _) [x,y] = x - y `mod` q
-    eval (Mul _ _) [x,y] = x * y `mod` q
+    eval (Add _ _) [x,y] = x + y % q
+    eval (Sub _ _) [x,y] = x - y % q
+    eval (Mul _ _) [x,y] = x * y % q
     eval (Input i)   [] = xs !! i
     eval (Const i)   [] = ys !! i
     eval _            _  = error "[evalMod] weird input"
@@ -74,15 +77,18 @@ plainEval c xs = foldCirc eval (outRef c) c /= 0
     eval (Const i)    [] = fromIntegral (consts c !! i)
     eval _            _  = error "[plainEval] weird input"
 
-ensure :: (Circuit -> [Bool] -> Bool) -> Circuit -> [TestCase] -> IO Bool
-ensure eval c ts = and <$> mapM ensure' (zip [(0::Int)..] ts)
+ensure :: Bool -> (Circuit -> [Bool] -> Bool) -> Circuit -> [TestCase] -> IO Bool
+ensure verbose eval c ts = and <$> mapM ensure' (zip [(0::Int)..] ts)
   where
     toBit :: Bool -> Char
     toBit b = if b then '1' else '0'
 
     ensure' (i, (inps, out)) = do
         let res = eval c (reverse inps)
-        if res == out then
+        if res == out then do
+            let s = printf "test %d succeeded: input:%s expected:%c got:%c"
+                            i (map toBit inps) (toBit out) (toBit res)
+            when verbose (putStrLn s)
             return True
         else do
             let s = printf "test %d failed! input:%s expected:%c got:%c"

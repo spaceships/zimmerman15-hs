@@ -7,6 +7,7 @@ module Zim14.Encoding.Fake where
 import Zim14.Circuit
 import Zim14.Evaluate
 import Zim14.Obfuscate (Obfuscation, Encoder, Params (n_ev, n_chk))
+import Zim14.Util ((%))
 
 import Control.DeepSeq (NFData)
 import Data.Serialize
@@ -39,17 +40,17 @@ fakeEval obf p c xs = (ev res /= 0) || (chk res /= 0)
 fakeMul :: Params -> Fake -> Fake -> Fake
 fakeMul p x y = Fake ev' chk'
   where
-    ev'  = ev x  * ev y  `mod` n_ev p
-    chk' = chk x * chk y `mod` n_chk p
+    ev'  = ev x  * ev y  % n_ev p
+    chk' = chk x * chk y % n_chk p
 
 fakeAdd :: Params -> Fake -> Fake -> Fake
 fakeAdd p x y = Fake ev' chk'
   where
-    ev'  = ev x  + ev y  `mod` n_ev p
-    chk' = chk x + chk y `mod` n_chk p
+    ev'  = ev x  + ev y  % n_ev p
+    chk' = chk x + chk y % n_chk p
 
 fakeSub :: Params -> Fake -> Fake -> Fake
 fakeSub p x y = Fake ev' chk'
   where
-    ev'  = ev x  - ev y  `mod` n_ev p
-    chk' = chk x - chk y `mod` n_chk p
+    ev'  = ev x  - ev y  % n_ev p
+    chk' = chk x - chk y % n_chk p
