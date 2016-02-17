@@ -37,10 +37,10 @@ cltEval obf pp c xs = not $ CLT.isZero pp (getCLT res)
     }
 
 cltMul :: CLT.PublicParams -> CLT13 -> CLT13 -> CLT13
-cltMul pp x y = CLT13 $ getCLT x * getCLT y `mod` CLT.modulus pp
+cltMul pp x y = CLT13 $ CLT.mul pp (getCLT x) (getCLT y)
 
 cltAdd :: CLT.PublicParams -> CLT13 -> CLT13 -> CLT13
-cltAdd pp x y = CLT13 $ getCLT x + getCLT y `mod` CLT.modulus pp
+cltAdd pp x y = CLT13 $ CLT.add pp (getCLT x) (getCLT y)
 
 cltSub :: CLT.PublicParams -> CLT13 -> CLT13 -> CLT13
-cltSub pp x y = CLT13 $ getCLT x - getCLT y `mod` CLT.modulus pp
+cltSub pp x y = CLT13 $ CLT.sub pp (getCLT x) (getCLT y)

@@ -23,9 +23,11 @@ tests = [ --testProperty "all the indices are used" prop_allIndicesUsed
         {-, testProperty "sindices correctly returns all sindices" prop_sindicesCorrect-}
         ]
 
+-- there is a weak point translating between Index and CLT.IndexSet
+
 {-prop_allIndicesUsed :: Property-}
 {-prop_allIndicesUsed = forAll (choose (1, 128)) $ \n ->-}
-    {-let ixs = allIndices n-}
+    {-let ixs = topLevelIndex n-}
         {-nzs = numCLTIndices n-}
     {-in S.fromList [0..nzs-1] == S.fromList (M.keys (indexer n ixs))-}
 

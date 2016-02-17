@@ -109,9 +109,9 @@ main = runCommand $ \opts [fp] -> do
         (pp, obf) <- do
             exists <- doesDirectoryExist dir
             if not exists || fresh opts then do
-                mmap <- CLT.setup (verbose opts) λ d (numIndices n) (topLevelCLTIndex c)
+                mmap <- CLT.setup (verbose opts) (λ+d) d (numIndices n) (topLevelCLTIndex c)
                 let pp  = CLT.publicParams mmap
-                    enc = cltEncode mmap (indexer n)
+                    enc = cltEncode mmap (indexer c)
                 when (verbose opts) $ pr "obfuscating"
                 obf <- obfuscate (verbose opts) p enc c
                 saveMMap dir pp

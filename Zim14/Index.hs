@@ -13,6 +13,8 @@ import Zim14.Util (b2i)
 import qualified CLT13 as CLT
 
 import Control.DeepSeq (NFData)
+import Control.Monad.State.Strict
+import Data.Map ((!))
 import Data.Monoid
 import GHC.Generics (Generic)
 import Text.Printf
@@ -41,8 +43,10 @@ instance Show IndexSym where
     show (F i j)     = printf "F_{%d,%d}" i j
 
 type Power = Int
-newtype Index = Index { getIndex :: M.Map IndexSym Power
-                      } deriving (Eq, Ord, Generic, NFData, Serialize)
+
+newtype Index = Index {
+    getIndex :: M.Map IndexSym Power
+} deriving (Eq, Ord, Generic, NFData, Serialize)
 
 instance Show Index where
     show = unwords . map showElem . M.toList . getIndex
@@ -85,23 +89,15 @@ bitFill n i1 i2 b1 b2
 -- correspond to?")
 type Indexer = Index -> CLT.IndexSet
 
-indexer :: Int -> Indexer
-indexer n = indexer'
+indexer :: Circuit -> Indexer
+indexer c = M.mapKeys (m!) . getIndex
   where
-    nys = 1
-    nxs = 2*n
-    nzs = n
-    nws = n
-
-    indexer' = CLT.indexUnions . map change . M.toList . getIndex
-    change (sym, power) = CLT.pow [ix sym] power
-
-    ix :: IndexSym -> CLT.Index
-    ix Y       = 0
-    ix (X i b) = 2*i + (if b then 1 else 0) + nys
-    ix (Z i)   = i                          + nys + nxs
-    ix (W i)   = i                          + nys + nxs + nzs
-    ix (F i j) = j + i*(2*n-1)              + nys + nxs + nzs + nws
+    tl = topLevelIndex c
+    m  = fst $ flip execState (M.empty, 0) $ do
+            let syms = M.keys (getIndex tl) :: [IndexSym]
+            mapM_ assign syms
+    assign :: IndexSym -> State (M.Map IndexSym CLT.Index, CLT.Index) ()
+    assign sym = modify $ \(m', i) -> (M.insert sym i m', i + 1)
 
 --------------------------------------------------------------------------------
 -- functions to get listing of CLT.Indices based on n
@@ -120,7 +116,7 @@ topLevelIndex c = mconcat [y, xs, zs, ws, ss]
     ss = pow1 [ F i j | i <- [0..n-1], j <- [0..2*n-2] ]
 
 topLevelCLTIndex :: Circuit -> CLT.IndexSet
-topLevelCLTIndex c = indexer (ninputs c) (topLevelIndex c)
+topLevelCLTIndex c = indexer c (topLevelIndex c)
 
 --------------------------------------------------------------------------------
 -- Index hepers
