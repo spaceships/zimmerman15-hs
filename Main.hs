@@ -4,8 +4,8 @@ module Main where
 
 import Zim14.Circuit
 import Zim14.Circuit.Parser
-import Zim14.Encoding.Fake
 import Zim14.Encoding.CLT13
+import Zim14.Encoding.Fake
 import Zim14.Index
 import Zim14.Obfuscate
 import Zim14.Serialize
@@ -123,6 +123,7 @@ main = runCommand $ \opts [fp] -> do
                 when (verbose opts) $ pr "loading existing obfuscation"
                 obf  <- loadObfuscation dir
                 return (pp, obf)
+
         -- evaluate on the input or tests
         case input opts of
             Nothing -> do

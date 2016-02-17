@@ -1,21 +1,20 @@
 module Zim14.Evaluate where
 
 import Zim14.Circuit
-import Zim14.Index
-import Zim14.Sym
-import Zim14.Obfuscate (Obfuscation)
-import Zim14.Util (i2b, red)
 import Zim14.Encoding
+import Zim14.Index
+import Zim14.Obfuscate (Obfuscation)
+import Zim14.Sym
+import Zim14.Util (red)
 
 import Data.Map ((!))
 import Data.Monoid
 import Debug.Trace
 
 data ObfEvaluator a = ObfEvaluator {
-    evAdd :: a -> a -> a,
-    evSub :: a -> a -> a,
     evMul :: a -> a -> a,
-    evExtract :: a -> Int
+    evAdd :: a -> a -> a,
+    evSub :: a -> a -> a
 }
 
 eval :: Show a => ObfEvaluator a -> Obfuscation a -> Circuit -> [Bool] -> a

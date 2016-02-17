@@ -1,23 +1,18 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Zim14.Encoding.CLT13 where
 
 import Zim14.Circuit
-import Zim14.Encoding
+import Zim14.Evaluate
 import Zim14.Index
-import Zim14.Obfuscate (Obfuscation)
-import Zim14.Util (i2b, b2i, red)
+import Zim14.Obfuscate (Obfuscation, Encoder)
 
-import CLT13.Rand
 import qualified CLT13 as CLT
 
 import Control.DeepSeq (NFData)
-import Data.Monoid
 import Data.Serialize (Serialize)
 import GHC.Generics (Generic)
-import Text.Printf
 
 newtype CLT13 = CLT13 {
     getCLT :: CLT.Encoding
@@ -26,8 +21,26 @@ newtype CLT13 = CLT13 {
 instance Show CLT13 where
     show _ = "[<clt13>]"
 
-cltEncode :: CLT.MMap -> Indexer -> Integer -> Integer -> Index -> Rand CLT13
-cltEncode = undefined
+-- cltEncode :: CLT.MMap -> Indexer -> (Integer -> Integer -> Index -> Rand CLT13)
+cltEncode :: CLT.MMap -> Indexer -> Encoder CLT13
+cltEncode mmap ixr x y ix = CLT13 <$> CLT.encode [x,y] (ixr ix) mmap
 
 cltEval :: Obfuscation CLT13 -> CLT.PublicParams -> Circuit -> [Bool] -> Bool
-cltEval = undefined
+cltEval obf pp c xs = not $ CLT.isZero pp (getCLT res)
+  where
+    res = eval cltEv obf c xs
+
+    cltEv = ObfEvaluator {
+        evMul = cltMul pp,
+        evAdd = cltAdd pp,
+        evSub = cltSub pp
+    }
+
+cltMul :: CLT.PublicParams -> CLT13 -> CLT13 -> CLT13
+cltMul pp x y = CLT13 $ getCLT x * getCLT y `mod` CLT.modulus pp
+
+cltAdd :: CLT.PublicParams -> CLT13 -> CLT13 -> CLT13
+cltAdd pp x y = CLT13 $ getCLT x + getCLT y `mod` CLT.modulus pp
+
+cltSub :: CLT.PublicParams -> CLT13 -> CLT13 -> CLT13
+cltSub pp x y = CLT13 $ getCLT x - getCLT y `mod` CLT.modulus pp

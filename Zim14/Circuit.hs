@@ -10,6 +10,7 @@ import CLT13.Util (pmap)
 
 import Control.Monad.State
 import Data.Map.Strict ((!))
+import Text.Printf
 import qualified Data.Map.Strict as M
 
 type Ref = Int
@@ -76,12 +77,17 @@ plainEval c xs = foldCirc eval (outRef c) c /= 0
 ensure :: (Circuit -> [Bool] -> Bool) -> Circuit -> [TestCase] -> IO Bool
 ensure eval c ts = and <$> mapM ensure' (zip [(0::Int)..] ts)
   where
-    ensure' (i, (inps, res)) = do
-        if eval c (reverse inps) == res then
+    toBit :: Bool -> Char
+    toBit b = if b then '1' else '0'
+
+    ensure' (i, (inps, out)) = do
+        let res = eval c (reverse inps)
+        if res == out then
             return True
         else do
-            putStrLn (red ("test " ++ show i ++ " failed: " ++
-                            concatMap show inps ++ " /= " ++ show res))
+            let s = printf "test %d failed! input:%s expected:%c got:%c"
+                            i (map toBit inps) (toBit out) (toBit res)
+            putStrLn (red s)
             return False
 
 foldCirc :: (Op -> [a] -> a) -> Ref -> Circuit -> a
