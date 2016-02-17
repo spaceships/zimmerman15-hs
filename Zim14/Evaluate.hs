@@ -18,9 +18,6 @@ data ObfEvaluator a = ObfEvaluator {
     evExtract :: a -> Int
 }
 
-evalTest :: Show a => ObfEvaluator a -> Obfuscation a -> Circuit -> [Int] -> Int
-evalTest ev obf c xs = evExtract ev $ eval ev obf c (map i2b xs)
-
 eval :: Show a => ObfEvaluator a -> Obfuscation a -> Circuit -> [Bool] -> a
 eval ev obf c xs =
     if not (indexEq tl tl') then

@@ -3,6 +3,7 @@ module Zim14.Circuit.Parser
   ) where
 
 import Zim14.Circuit
+import Zim14.Util (readBitstring)
 
 import Control.Monad (when)
 import Text.Parsec hiding (spaces, parseTest)
@@ -52,8 +53,8 @@ parseTest = do
     inps <- many (oneOf ['0','1'])
     spaces
     out <- oneOf ['0','1']
-    let inp = map (read . (:[])) inps
-        res = (read . (:[])) out
+    let inp = readBitstring inps
+        res = out == '1'
     addTest (inp, res)
     endLine
 

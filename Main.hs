@@ -4,15 +4,12 @@ module Main where
 
 import Zim14.Circuit
 import Zim14.Circuit.Parser
-import Zim14.Encoding
-import Zim14.Evaluate
-import Zim14.Encoding
 import Zim14.Encoding.Fake
 import Zim14.Encoding.CLT13
 import Zim14.Index
 import Zim14.Obfuscate
 import Zim14.Serialize
-import Zim14.Util (b2i, pr, readBitstring)
+import Zim14.Util (pr, readBitstring)
 
 import CLT13.Util (forceM)
 import qualified CLT13 as CLT
@@ -85,7 +82,7 @@ main = runCommand $ \opts [fp] -> do
                     printf "incorrect size input! expected %d bits got %d\n" n (length str)
                     exitFailure
                 printf "evaluating plaintext circuit with input x=%s: " str
-                let res = plainEval c (map b2i (readBitstring str))
+                let res = plainEval c (readBitstring str)
                 print res
 
     -- obfuscate & evaluate using the fake encodings
@@ -96,7 +93,7 @@ main = runCommand $ \opts [fp] -> do
         case input opts of
             Nothing -> do
                 pr "running tests"
-                ok <- ensure (fakeEvalTest obf p) c ts
+                ok <- ensure (fakeEval obf p) c ts
                 if ok then pr "ok" else pr "failed" >> exitFailure
             Just str -> do
                 when (length str /= n) $ do
@@ -114,7 +111,7 @@ main = runCommand $ \opts [fp] -> do
             if not exists || fresh opts then do
                 mmap <- CLT.setup (verbose opts) λ d (numIndices n) (topLevelCLTIndex c)
                 let pp  = CLT.publicParams mmap
-                    enc = encode mmap (indexer n)
+                    enc = cltEncode mmap (indexer n)
                 when (verbose opts) $ pr "obfuscating"
                 obf <- obfuscate (verbose opts) p enc c
                 saveMMap dir pp
@@ -130,14 +127,14 @@ main = runCommand $ \opts [fp] -> do
         case input opts of
             Nothing -> do
                 pr "running tests"
-                ok <- ensure (evalEncodingTest obf pp) c ts
+                ok <- ensure (cltEval obf pp) c ts
                 if ok then pr "ok" else pr "failed" >> exitFailure
             Just str -> do
                 when (length str /= n) $ do
                     printf "incorrect size input! expected %d bits got %d\n" n (length str)
                     exitFailure
                 pr ("evaluating on input x=" ++ str)
-                let res = evalEncoding obf pp c (readBitstring str)
+                let res = cltEval obf pp c (readBitstring str)
                 pr ("result=" ++ show res)
 
     -- cleanup

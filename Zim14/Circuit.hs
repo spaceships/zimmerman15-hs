@@ -29,9 +29,7 @@ data Circuit = Circuit { outRef  :: Ref
                        , consts  :: [Integer]
                        } deriving (Show)
 
-type TestCase = ([Int], Int)
-
-type Evaluator = Circuit -> [Int] -> Int
+type TestCase = ([Bool], Bool)
 
 depth :: Circuit -> Int
 depth c = foldCirc f (outRef c) c
@@ -64,17 +62,18 @@ evalMod c xs ys q = foldCirc eval (outRef c) c
     eval _            _  = error "[evalMod] weird input"
 
 -- note: inputs are little endian: [x0, x1, ..., xn]
-plainEval :: Circuit -> [Int] -> Int
-plainEval c xs = b2i (foldCirc eval (outRef c) c /= 0) -- this is how the tests work
+plainEval :: Circuit -> [Bool] -> Bool
+plainEval c xs = foldCirc eval (outRef c) c /= 0
   where
+    eval :: Op -> [Integer] -> Integer
     eval (Add _ _) [x,y] = x + y
     eval (Sub _ _) [x,y] = x - y
     eval (Mul _ _) [x,y] = x * y
-    eval (Input i)    [] = xs !! i
+    eval (Input i)    [] = b2i (xs !! i)
     eval (Const i)    [] = fromIntegral (consts c !! i)
     eval _            _  = error "[plainEval] weird input"
 
-ensure :: Evaluator -> Circuit -> [TestCase] -> IO Bool
+ensure :: (Circuit -> [Bool] -> Bool) -> Circuit -> [TestCase] -> IO Bool
 ensure eval c ts = and <$> mapM ensure' (zip [(0::Int)..] ts)
   where
     ensure' (i, (inps, res)) = do

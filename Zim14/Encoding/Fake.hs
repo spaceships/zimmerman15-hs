@@ -14,29 +14,27 @@ import CLT13.Rand
 
 import Control.DeepSeq (NFData)
 import Data.Monoid
+import Data.Serialize
 import GHC.Generics (Generic)
 import Text.Printf
 
 data Fake = Fake {
     ev  :: Integer,
     chk :: Integer
-} deriving (Eq, Generic, NFData)
+} deriving (Eq, Generic, Serialize, NFData)
 
 instance Show Fake where
     show (Fake {..}) = printf "[%d, %d]" ev chk
 
-fakeEncode :: Integer -> Integer -> Index -> Rand (Encoding Fake)
-fakeEncode x y ix = return $ Encoding ix (Fake x y)
-
-fakeEvalTest :: Obfuscation Fake -> Circuit -> [Int] -> Int
-fakeEvalTest = undefined
+fakeEncode :: Integer -> Integer -> Index -> Rand Fake
+fakeEncode x y ix = return $ Fake x y
 
 {-fakeEvalTest :: Obfuscation Fake -> Params -> Circuit -> [Int] -> Int-}
 {-fakeEvalTest obf p c xs = b2i $ not ((ev z == 0) && (chk z == 0))-}
   {-where-}
     {-z = eval fakeEv obf p c (map i2b xs)-}
 
-fakeEval :: Obfuscation Fake -> Circuit -> [Bool] -> Fake
+fakeEval :: Obfuscation Fake -> Params -> Circuit -> [Bool] -> Bool
 fakeEval = undefined
 
 fakeEv :: ObfEvaluator Fake
