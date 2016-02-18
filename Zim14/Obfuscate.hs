@@ -102,20 +102,27 @@ runGetter verbose n m get = do
         js = [0..m-1]
         bs = [False, True]
 
-    let xs = tr "generating xs" $ [ g (X_ i b) | i <- is, b <- bs ]
-        us = tr "generating us" $ [ g (U_ i b) | i <- is, b <- bs ]
-        ys = tr "generating ys" $ [ g (Y_ j)   | j <- js ]
-        v  = tr "generating v"  $ g V_
-        zs = tr "generating zs" $ [ g (Z_ i b) | i <- is, b <- bs ]
-        ws = tr "generating ws" $ [ g (W_ i b) | i <- is, b <- bs ]
-        c  = tr "generating c"  $ g C_
-        ss = tr "generating ss" $ [ g (S_ i1 i2 b1 b2)
-                                  | i1 <- is, i2 <- is
-                                  , b1 <- bs, b2 <- bs
-                                  , i1 < i2
-                                  ]
-
-        actions = xs ++ us ++ ys ++ [v] ++ zs ++ ws ++ [c] ++ ss
+    let xs = [ g (X_ i b) | i <- is, b <- bs ]
+        us = [ g (U_ i b) | i <- is, b <- bs ]
+        ys = [ g (Y_ j)   | j <- js ]
+        v  = g V_
+        zs = [ g (Z_ i b) | i <- is, b <- bs ]
+        ws = [ g (W_ i b) | i <- is, b <- bs ]
+        c  = g C_
+        ss = [ g (S_ i1 i2 b1 b2)
+             | i1 <- is, i2 <- is
+             , b1 <- bs, b2 <- bs
+             , i1 < i2
+             ]
+        actions =
+            tr "generating xs" xs ++
+            tr "generating us" us ++
+            tr "generating ys" ys ++
+            tr "generating v"  [v] ++
+            tr "generating zs" zs ++
+            tr "generating ws" ws ++
+            tr "generating c"  [c] ++
+            tr "generating ss" ss
 
     rngs <- splitRand (length actions)
     let res = pmap (uncurry evalRand) (zip actions rngs)
