@@ -28,11 +28,13 @@ executable zimmerman14
                         , containers
                         , deepseq
                         , directory >= 1.2.5
+                        , IfElse
                         , mtl
                         , options
                         , parallel-io
                         , parsec
                         , split
+                        , stm
 
     ghc-options:        -Wall -threaded -O2 -fprof-auto "-with-rtsopts=-N4 -p"
                         -fno-warn-unused-do-bind

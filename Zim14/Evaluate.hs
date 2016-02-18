@@ -5,12 +5,12 @@ import Zim14.Encoding
 import Zim14.Index
 import Zim14.Obfuscate (Obfuscation)
 import Zim14.Sym
-import Zim14.Util (red, b2i)
+import Zim14.Util (red)
 
+import Control.DeepSeq (NFData)
 import Data.Map ((!))
 import Data.Monoid
 import Debug.Trace
-import Text.Printf
 
 data ObfEvaluator a = ObfEvaluator {
     evMul :: a -> a -> a,
@@ -18,13 +18,20 @@ data ObfEvaluator a = ObfEvaluator {
     evSub :: a -> a -> a
 }
 
-eval :: Show a => ObfEvaluator a -> Obfuscation a -> Circuit -> [Bool] -> a
-eval ev obf c xs =
-    if not (indexEq tl tl') then
+eval :: (Show a, NFData a) => ObfEvaluator a -> Obfuscation a -> Circuit -> [Bool] -> IO a
+eval ev obf c xs = do
+    chat <- foldCircIO eval' c
+    let z = mul ev (strictSub ev (mul ev chat zhat) (mul ev (obf!C_) what)) σ
+
+    let tl   = topLevelIndex c
+    let tl'  = ix z
+    let diff = indexDiff tl tl'
+
+    return $ if not (indexEq tl tl') then
         trace (red ("[eval] top level index not reached. missing indices: " ++ show diff))
         trace ("z = " ++ show z) (val z)
     else
-        trace ("z = " ++ show z) (val z)
+        val z
   where
     n = ninputs c
 
@@ -37,17 +44,11 @@ eval ev obf c xs =
 
     prod = foldr1 (mul ev)
 
-    chat = foldCirc eval' (outRef c) c
     σ = prod [ obf ! S_ i1 i2 (xs!!i1) (xs!!i2)
              | i1 <- [0..n-1], i2 <- [0..n-1], i1 < i2
              ]
     zhat = prod [ obf ! Z_ i (xs!!i) | i <- [0..n-1] ]
     what = prod [ obf ! W_ i (xs!!i) | i <- [0..n-1] ]
-    z = mul ev (strictSub ev obf (mul ev chat zhat) (mul ev (obf!C_) what)) σ
-
-    tl   = topLevelIndex c
-    tl'  = ix z
-    diff = indexDiff tl tl'
 
 mul :: ObfEvaluator a -> Encoding a -> Encoding a -> Encoding a
 mul ev x y = Encoding ix' val'
@@ -63,8 +64,8 @@ add ev obf x y = Encoding target val'
     y' = raise ev obf target y
     val' = evAdd ev (val x') (val y')
 
-strictSub :: ObfEvaluator a -> Obfuscation a -> Encoding a -> Encoding a -> Encoding a
-strictSub ev obf x y
+strictSub :: ObfEvaluator a -> Encoding a -> Encoding a -> Encoding a
+strictSub ev x y
     | not (indexEq (ix x) (ix y)) = error "[strictSub] arguments with different indices!"
     | otherwise = Encoding (ix x) val'
   where

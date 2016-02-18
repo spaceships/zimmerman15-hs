@@ -25,11 +25,11 @@ instance Show CLT13 where
 cltEncode :: CLT.MMap -> Indexer -> Encoder CLT13
 cltEncode mmap ixr x y ix = CLT13 <$> CLT.encode [x,y] (ixr ix) mmap
 
-cltEval :: Obfuscation CLT13 -> CLT.PublicParams -> Circuit -> [Bool] -> Bool
-cltEval obf pp c xs = not $ CLT.isZero pp (getCLT res)
+cltEval :: Obfuscation CLT13 -> CLT.PublicParams -> Circuit -> [Bool] -> IO Bool
+cltEval obf pp c xs = do
+    res <- eval cltEv obf c xs
+    return $ not $ CLT.isZero pp (getCLT res)
   where
-    res = eval cltEv obf c xs
-
     cltEv = ObfEvaluator {
         evMul = cltMul pp,
         evAdd = cltAdd pp,

@@ -26,11 +26,11 @@ instance Show Fake where
 fakeEncode :: Encoder Fake
 fakeEncode x y _ = return $ Fake x y
 
-fakeEval :: Obfuscation Fake -> Params -> Circuit -> [Bool] -> Bool
-fakeEval obf p c xs = (ev res /= 0) || (chk res /= 0)
+fakeEval :: Obfuscation Fake -> Params -> Circuit -> [Bool] -> IO Bool
+fakeEval obf p c xs = do
+    res <- eval fakeEv obf c xs
+    return $ (ev res /= 0) || (chk res /= 0)
   where
-    res = eval fakeEv obf c xs
-
     fakeEv = ObfEvaluator {
         evMul = fakeMul p,
         evAdd = fakeAdd p,

@@ -78,7 +78,7 @@ evalPlaintextCircuit opts c ts = do
     case input opts of
         Nothing -> do
             pr "evaluating plaintext circuit tests"
-            ok <- ensure (verbose opts) plainEval c ts
+            ok <- ensure (verbose opts) plainEvalIO c ts
             if ok then pr "ok" else pr "failed"
         Just str -> do
             when (length str /= ninputs c) $ do
@@ -107,7 +107,7 @@ evalFakeCircuit opts λ c ts = do
                 printf "incorrect size input! expected %d bits got %d\n" n (length str)
                 exitFailure
             pr ("evaluating on input x=" ++ str)
-            let res = fakeEval obf p c (readBitstring str)
+            res <- fakeEval obf p c (readBitstring str)
             pr ("result=" ++ show res)
 
 evalObfuscatedCircuit :: FilePath -> MainOptions -> Int -> Circuit -> [TestCase] -> IO ()
@@ -148,7 +148,7 @@ evalObfuscatedCircuit fp opts λ c ts = do
                 printf "incorrect size input! expected %d bits got %d\n" n (length str)
                 exitFailure
             pr ("evaluating on input x=" ++ str)
-            let res = cltEval obf pp c (readBitstring str)
+            res <- cltEval obf pp c (readBitstring str)
             pr ("result=" ++ show res)
 
 dirName :: FilePath -> Int -> FilePath
