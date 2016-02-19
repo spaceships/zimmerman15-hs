@@ -9,7 +9,6 @@ import qualified CLT13 as CLT
 import Control.Monad.IfElse (whenM)
 import Control.Monad
 import Control.Concurrent.ParallelIO
-import Control.Exception
 import System.Posix
 import qualified Data.ByteString as BS
 import qualified Data.Map as M
@@ -18,23 +17,24 @@ import qualified Data.Serialize as S
 createDirectoryIfMissing :: FilePath -> IO ()
 createDirectoryIfMissing dir = do
     whenM (not <$> fileExist dir) $ do
-        createDirectory dir stdFileMode
+        createDirectory dir (unionFileModes stdFileMode ownerExecuteMode)
 
 listDirectory :: FilePath -> IO [FilePath]
 listDirectory dir = do
     ds    <- openDirStream dir
-    files <- getFile ds
+    files <- getAllFiles ds
     closeDirStream ds
     return files
   where
-    getFile s = do
-        maybeF <- catch (Just <$> readDirStream s)
-                        (\(_ :: IOException) -> return Nothing)
-        case maybeF of
-            Nothing -> return []
-            Just f  -> do
-                rest <- getFile s
-                return (f : rest)
+    getAllFiles s = do
+        f <- readDirStream s
+        case f of
+            ""   -> return []
+            "."  -> getAllFiles s
+            ".." -> getAllFiles s
+            x    -> do
+                rest <- getAllFiles s
+                return (x : rest)
 
 saveObfuscation :: S.Serialize a => FilePath -> Obfuscation a -> IO ()
 saveObfuscation dir obf = do
