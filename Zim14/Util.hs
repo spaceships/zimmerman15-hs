@@ -17,10 +17,10 @@ pr s = do
     putStrLn s
     hFlush stdout
 
-num2bits :: Integer -> [Bool]
-num2bits x = reverse bs
+num2Bits :: Int -> Integer -> [Bool]
+num2Bits n x = reverse bs
   where
-    bs = [ x .&. 2^i > 0 | i <- [0 .. sizeBase2 x] ]
+    bs = [ x .&. 2^i > 0 | i <- [0 .. n-1] ]
 
 readBitstring :: String -> [Bool]
 readBitstring = map (== '1')

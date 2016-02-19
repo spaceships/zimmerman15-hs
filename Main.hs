@@ -9,7 +9,7 @@ import Zim14.Encoding.Fake
 import Zim14.Index
 import Zim14.Obfuscate
 import Zim14.Serialize
-import Zim14.Util (pr, readBitstring)
+import Zim14.Util (pr, readBitstring, num2Bits)
 
 import CLT13.Rand
 import CLT13.Util (forceM)
@@ -28,6 +28,7 @@ data MainOptions = MainOptions { fake      :: Bool
                                , fresh     :: Bool
                                , plaintext :: Bool
                                , input     :: Maybe String
+                               , gentests  :: Maybe Int
                                }
 
 instance Options MainOptions where
@@ -61,16 +62,23 @@ instance Options MainOptions where
                      , optionLongFlags   = ["input"]
                      , optionDescription = "Input as a bitstring."
                      })
+        <*> defineOption (optionType_maybe optionType_int)
+            (\o -> o { optionLongFlags   = ["gentests"]
+                     , optionDescription = "Generate tests from the plaintext eval."
+                     })
 
 main :: IO ()
 main = runCommand $ \opts [fp] -> do
     (c, ts) <- parseCirc <$> readFile fp
-    when (plaintext opts) $ evalPlaintextCircuit opts c ts
+    ts' <- case gentests opts of
+        Nothing -> return ts
+        Just i  -> replicateM i (genTest c)
+    when (plaintext opts) $ evalPlaintextCircuit opts c ts'
     let λ = lambda opts
     if fake opts then
-        evalFakeCircuit opts λ c ts
+        evalFakeCircuit opts λ c ts'
     else
-        evalObfuscatedCircuit fp opts λ c ts
+        evalObfuscatedCircuit fp opts λ c ts'
     stopGlobalPool -- cleanup
 
 evalPlaintextCircuit :: MainOptions -> Circuit -> [TestCase] -> IO ()
@@ -153,3 +161,8 @@ evalObfuscatedCircuit fp opts λ c ts = do
 
 dirName :: FilePath -> Int -> FilePath
 dirName fp λ = fp ++ "." ++ show λ
+
+genTest :: Circuit -> IO TestCase
+genTest c = do
+    inp <- num2Bits (ninputs c) <$> randIO (randInteger (ninputs c))
+    return (reverse inp, plainEval c inp)

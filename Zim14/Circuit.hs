@@ -154,8 +154,8 @@ foldCircIO f c = do
             atomically $ putTMVar (mem ! ref) val
     let lvls = topoLevels c
     forceM lvls
-    forM_ (zip [(0 :: Int)..] lvls) $ \(i, lvl) -> do
-        printf "evaluating level %d size=%d\n" i (length lvl)
+    forM_ (zip [(0 :: Int)..] lvls) $ \(_, lvl) -> do
+        {-printf "evaluating level %d size=%d\n" i (length lvl)-}
         parallelInterleaved (map eval lvl)
     atomically (readTMVar (mem ! outRef c))
 
