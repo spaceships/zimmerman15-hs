@@ -37,7 +37,7 @@ executable zimmerman14
                         , unix
 
     --ghc-options:        -Wall -threaded -O2 -fprof-auto "-with-rtsopts=-N4 -p"
-    ghc-options:        -Wall -threaded -O2 "-with-rtsopts=-N32"
+    ghc-options:        -Wall -threaded -O2 "-with-rtsopts=-N4"
                         -fno-warn-unused-do-bind
 
 test-suite test
