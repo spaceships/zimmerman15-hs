@@ -17,6 +17,7 @@ import qualified CLT13 as CLT
 
 import Control.Concurrent.ParallelIO (stopGlobalPool)
 import Control.Monad
+import Debug.Trace
 import Options
 import System.Exit
 import System.Posix
@@ -119,8 +120,7 @@ evalObfuscatedCircuit fp opts λ c ts = do
     (pp, obf) <- do
         exists <- fileExist dir
         if not exists || fresh opts then do
-            {-mmap <- CLT.setup (verbose opts) (λ+d) (d+3) (numIndices c) (topLevelCLTIndex c)-}
-            mmap <- CLT.setup (verbose opts) λ (d+3) (numIndices c) (topLevelCLTIndex c)
+            mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)
             let pp  = CLT.publicParams mmap
                 enc = cltEncode mmap (indexer c)
                 n_ev  = CLT.gs mmap !! 0
@@ -153,3 +153,9 @@ evalObfuscatedCircuit fp opts λ c ts = do
 
 dirName :: FilePath -> Int -> FilePath
 dirName fp λ = fp ++ "." ++ show λ
+
+getKappa :: Circuit -> Int
+getKappa c = trace ("Δ=" ++ show δ) $ δ + 2*n + n*(2*n-1)
+  where
+    n = ninputs c
+    δ = ydeg c + sum (xdegs c)

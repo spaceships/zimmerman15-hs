@@ -18,22 +18,22 @@ import qualified Data.Serialize as S
 createDirectoryIfMissing :: FilePath -> IO ()
 createDirectoryIfMissing dir = do
     whenM (not <$> fileExist dir) $ do
-        createDirectory dir (CMode 755)
+        createDirectory dir stdFileMode
 
 listDirectory :: FilePath -> IO [FilePath]
 listDirectory dir = do
     ds    <- openDirStream dir
-    files <- read ds
+    files <- getFile ds
     closeDirStream ds
     return files
   where
-    read s = do
+    getFile s = do
         maybeF <- catch (Just <$> readDirStream s)
-                        (\(x :: IOException) -> return Nothing)
+                        (\(_ :: IOException) -> return Nothing)
         case maybeF of
             Nothing -> return []
             Just f  -> do
-                rest <- read s
+                rest <- getFile s
                 return (f : rest)
 
 saveObfuscation :: S.Serialize a => FilePath -> Obfuscation a -> IO ()
