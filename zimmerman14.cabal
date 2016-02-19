@@ -27,7 +27,6 @@ executable zimmerman14
                         , clt13
                         , containers
                         , deepseq
-                        , directory >= 1.2.5
                         , IfElse
                         , mtl
                         , options
@@ -35,8 +34,10 @@ executable zimmerman14
                         , parsec
                         , split
                         , stm
+                        , unix
 
-    ghc-options:        -Wall -threaded -O2 -fprof-auto "-with-rtsopts=-N4 -p"
+    --ghc-options:        -Wall -threaded -O2 -fprof-auto "-with-rtsopts=-N4 -p"
+    ghc-options:        -Wall -threaded -O2 "-with-rtsopts=-N32"
                         -fno-warn-unused-do-bind
 
 test-suite test
@@ -52,9 +53,9 @@ test-suite test
                         , clt13
                         , containers
                         , deepseq
-                        , directory >= 1.2.5
                         , mtl
                         , options
                         , parallel-io
                         , parsec
                         , split
+                        , unix

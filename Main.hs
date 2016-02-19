@@ -18,8 +18,8 @@ import qualified CLT13 as CLT
 import Control.Concurrent.ParallelIO (stopGlobalPool)
 import Control.Monad
 import Options
-import System.Directory
 import System.Exit
+import System.Posix
 import Text.Printf
 
 data MainOptions = MainOptions { fake      :: Bool
@@ -117,7 +117,7 @@ evalObfuscatedCircuit fp opts λ c ts = do
         n   = ninputs c
         d   = depth c
     (pp, obf) <- do
-        exists <- doesDirectoryExist dir
+        exists <- fileExist dir
         if not exists || fresh opts then do
             {-mmap <- CLT.setup (verbose opts) (λ+d) (d+3) (numIndices c) (topLevelCLTIndex c)-}
             mmap <- CLT.setup (verbose opts) λ (d+3) (numIndices c) (topLevelCLTIndex c)
