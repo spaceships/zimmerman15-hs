@@ -94,11 +94,15 @@ main = runCommand $ \opts args -> do
     when (verbose opts) $ printCircInfo c
     when (plaintext opts) $ evalPlaintextCircuit opts c ts
     let λ = lambda opts
-    if fake opts then
-        evalFakeCircuit opts λ c ts
-    else
-        evalObfuscatedCircuit fp opts λ c ts
+    ok <- if fake opts then
+              evalFakeCircuit opts λ c ts
+          else
+              evalObfuscatedCircuit fp opts λ c ts
     stopGlobalPool -- cleanup
+    if ok then
+        exitSuccess
+    else
+        exitFailure
 
 printCircInfo :: Circuit -> IO ()
 printCircInfo c = printf "circuit info: depth=%d n=%d m=%d xdegs=%s ydeg=%s\n"
@@ -121,7 +125,7 @@ evalPlaintextCircuit opts c ts = do
             let res = plainEval c (readBitstring str)
             print res
 
-evalFakeCircuit :: MainOptions -> Int -> Circuit -> [TestCase] -> IO ()
+evalFakeCircuit :: MainOptions -> Int -> Circuit -> [TestCase] -> IO Bool
 evalFakeCircuit opts λ c ts = do
     let n = ninputs c
     [n_ev, n_chk] <- randIO (randPrimes 2 λ)
@@ -133,7 +137,8 @@ evalFakeCircuit opts λ c ts = do
         Nothing -> do
             pr "running tests"
             ok <- ensure (verbose opts) (fakeEval obf p) c ts
-            if ok then pr "ok" else pr "failed" >> exitFailure
+            if ok then pr "ok" else pr "failed"
+            return ok
         Just str -> do
             when (length str /= n) $ do
                 printf "incorrect size input! expected %d bits got %d\n" n (length str)
@@ -141,8 +146,9 @@ evalFakeCircuit opts λ c ts = do
             pr ("evaluating on input x=" ++ str)
             res <- fakeEval obf p c (readBitstring str)
             pr ("result=" ++ show res)
+            return True
 
-evalObfuscatedCircuit :: Maybe FilePath -> MainOptions -> Int -> Circuit -> [TestCase] -> IO ()
+evalObfuscatedCircuit :: Maybe FilePath -> MainOptions -> Int -> Circuit -> [TestCase] -> IO Bool
 evalObfuscatedCircuit fp opts λ c ts = do
     -- obfuscate or load an existing obfuscation
     let dir = dirName <$> fp <*> pure λ
@@ -171,13 +177,13 @@ evalObfuscatedCircuit fp opts λ c ts = do
             when (verbose opts) $ pr "loading existing obfuscation"
             obf  <- loadObfuscation dir'
             return (pp, obf)
-
     -- evaluate on the input or tests
     case input opts of
         Nothing -> do
             pr "running tests"
             ok <- ensure (verbose opts) (cltEval obf pp) c ts
-            if ok then pr "ok" else pr "failed" >> exitFailure
+            if ok then pr "ok" else pr "failed"
+            return ok
         Just str -> do
             when (length str /= n) $ do
                 printf "incorrect size input! expected %d bits got %d\n" n (length str)
@@ -185,6 +191,7 @@ evalObfuscatedCircuit fp opts λ c ts = do
             pr ("evaluating on input x=" ++ str)
             res <- cltEval obf pp c (readBitstring str)
             pr ("result=" ++ show res)
+            return True
 
 dirName :: FilePath -> Int -> FilePath
 dirName fp λ = fp ++ "." ++ show λ
