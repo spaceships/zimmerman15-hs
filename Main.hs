@@ -157,7 +157,8 @@ evalObfuscatedCircuit fp opts λ c ts = do
     (pp, obf) <- do
         exists <- maybe (return False) fileExist dir
         if not exists || fresh opts then do
-            mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)
+            {-mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)-}
+            mmap <- CLT.setup (verbose opts) λ (d+2) (numIndices c) (topLevelCLTIndex c)
             let pp  = CLT.publicParams mmap
                 enc = cltEncode mmap (indexer c)
                 n_ev  = CLT.gs mmap !! 0
@@ -202,7 +203,7 @@ genTest c = do
     return (reverse inp, plainEval c inp)
 
 getKappa :: Circuit -> Int
-getKappa c = trace ("Δ=" ++ show δ) $ δ + 2*n + n*(2*n-1)
+getKappa c = δ + 2*n + n*(2*n-1)
   where
     n = ninputs c
     δ = ydeg c + sum (xdegs c)
