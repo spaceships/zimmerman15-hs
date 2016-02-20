@@ -18,19 +18,22 @@ import qualified CLT13 as CLT
 
 import Control.Concurrent.ParallelIO (stopGlobalPool)
 import Control.Monad
+import Data.Maybe (fromJust)
 import Debug.Trace
 import Options
 import System.Exit
 import System.Posix
 import Text.Printf
+import Test.QuickCheck (generate)
 
-data MainOptions = MainOptions { fake      :: Bool
-                               , lambda    :: Int
-                               , verbose   :: Bool
-                               , fresh     :: Bool
-                               , plaintext :: Bool
-                               , input     :: Maybe String
-                               , gentests  :: Maybe Int
+data MainOptions = MainOptions { fake          :: Bool
+                               , lambda        :: Int
+                               , verbose       :: Bool
+                               , fresh         :: Bool
+                               , plaintext     :: Bool
+                               , input         :: Maybe String
+                               , gentests      :: Maybe Int
+                               , randomcircuit :: Maybe Int
                                }
 
 instance Options MainOptions where
@@ -68,20 +71,39 @@ instance Options MainOptions where
             (\o -> o { optionLongFlags   = ["gentests"]
                      , optionDescription = "Generate tests from the plaintext eval."
                      })
+        <*> defineOption (optionType_maybe optionType_int)
+            (\o -> o { optionShortFlags  = ['R']
+                     , optionLongFlags   = ["randomcircuit"]
+                     , optionDescription = "Generate a random circuit with specified depth."
+                     })
 
 main :: IO ()
-main = runCommand $ \opts [fp] -> do
-    (c, ts) <- parseCirc <$> readFile fp
-    ts' <- case gentests opts of
-        Nothing -> return ts
-        Just i  -> replicateM i (genTest c)
-    when (plaintext opts) $ evalPlaintextCircuit opts c ts'
+main = runCommand $ \opts args -> do
+    (c,ts,fp) <- case randomcircuit opts of
+        Nothing -> do
+            let [fp] = args
+            (c,ts) <- parseCirc <$> readFile fp
+            ts' <- case gentests opts of
+                Nothing -> return ts
+                Just i  -> replicateM i (genTest c)
+            return (c,ts',Just fp)
+        Just d -> do
+            c  <- generate $ arbitraryCircuit 10 10 10 d
+            ts <- replicateM 10 (genTest c)
+            return (c,ts,Nothing)
+    when (verbose opts) $ printCircInfo c
+    when (plaintext opts) $ evalPlaintextCircuit opts c ts
     let λ = lambda opts
     if fake opts then
-        evalFakeCircuit opts λ c ts'
+        evalFakeCircuit opts λ c ts
     else
-        evalObfuscatedCircuit fp opts λ c ts'
+        evalObfuscatedCircuit fp opts λ c ts
     stopGlobalPool -- cleanup
+
+printCircInfo :: Circuit -> IO ()
+printCircInfo c = printf "circuit info: depth=%d n=%d m=%d xdegs=%s ydeg=%s\n"
+                         (depth c) (ninputs c) (nconsts c)
+                         (show (xdegs c)) (show (ydeg c))
 
 evalPlaintextCircuit :: MainOptions -> Circuit -> [TestCase] -> IO ()
 evalPlaintextCircuit opts c ts = do
@@ -120,14 +142,14 @@ evalFakeCircuit opts λ c ts = do
             res <- fakeEval obf p c (readBitstring str)
             pr ("result=" ++ show res)
 
-evalObfuscatedCircuit :: FilePath -> MainOptions -> Int -> Circuit -> [TestCase] -> IO ()
+evalObfuscatedCircuit :: Maybe FilePath -> MainOptions -> Int -> Circuit -> [TestCase] -> IO ()
 evalObfuscatedCircuit fp opts λ c ts = do
     -- obfuscate or load an existing obfuscation
-    let dir = dirName fp λ
+    let dir = dirName <$> fp <*> pure λ
         n   = ninputs c
         d   = depth c
     (pp, obf) <- do
-        exists <- fileExist dir
+        exists <- maybe (return False) fileExist dir
         if not exists || fresh opts then do
             mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)
             let pp  = CLT.publicParams mmap
@@ -136,14 +158,18 @@ evalObfuscatedCircuit fp opts λ c ts = do
                 n_chk = CLT.gs mmap !! 1
             when (verbose opts) $ pr "obfuscating"
             obf <- obfuscate (verbose opts) (Params n_ev n_chk) enc c
-            saveMMap dir pp
-            saveObfuscation dir obf
+            case dir of
+                Nothing   -> return ()
+                Just dir' -> do
+                    saveMMap dir' pp
+                    saveObfuscation dir' obf
             return (pp, obf)
         else do
+            let dir' = fromJust dir
             when (verbose opts) $ pr "loading existing mmap"
-            pp <- loadMMap dir
+            pp <- loadMMap dir'
             when (verbose opts) $ pr "loading existing obfuscation"
-            obf  <- loadObfuscation dir
+            obf  <- loadObfuscation dir'
             return (pp, obf)
 
     -- evaluate on the input or tests

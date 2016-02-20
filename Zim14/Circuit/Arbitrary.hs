@@ -24,16 +24,16 @@ data CircuitBuilder = CircuitBuilder {
 }
 
 arbitraryCircuit :: Int -> Int -> Int -> Int -> Gen Circuit
-arbitraryCircuit nxs nys width depth = circ <$> build
+arbitraryCircuit nxs nys width circdepth = circ <$> build
   where
     build :: Gen CircuitBuilder
     build = flip execStateT emptyBuild $ do
         replicateM nxs    makeInp
         replicateM nys    makeConst
-        forM [1..depth] $ \d -> do
+        forM [1..circdepth] $ \d -> do
             ngates <- lift $ choose (1, width)
             replicateM_ ngates (makeGate d)
-        lastRef <- makeGate (depth + 1)
+        lastRef <- makeGate (circdepth + 1)
         setOutRef lastRef
 
     emptyBuild = CircuitBuilder emptyCirc M.empty 0 0 0
