@@ -1,7 +1,5 @@
 module Zim14.Util where
 
-import CLT13.Util (sizeBase2)
-
 import Data.Bits ((.&.))
 import System.IO
 

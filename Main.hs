@@ -3,6 +3,7 @@
 module Main where
 
 import Zim14.Circuit
+import Zim14.Circuit.Arbitrary
 import Zim14.Circuit.Parser
 import Zim14.Encoding.CLT13
 import Zim14.Encoding.Fake

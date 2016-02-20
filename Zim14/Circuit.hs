@@ -46,9 +46,6 @@ depth c = foldCirc f (outRef c) c
     f (Const _) [] = 0
     f _         xs = maximum xs + 1
 
-{-multDepth :: Circuit -> Int-}
-{-multDepth c = foldCirc f (outRef c) c-}
-
 degree :: Circuit -> Ref -> Op -> Int
 degree c ref z = foldCirc f ref c
   where
