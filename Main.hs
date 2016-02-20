@@ -88,7 +88,7 @@ main = runCommand $ \opts args -> do
                 Just i  -> replicateM i (genTest c)
             return (c,ts',Just fp)
         Just d -> do
-            c  <- generate $ arbitraryCircuit 10 10 10 d
+            c  <- generate $ arbitraryCircuit 2 2 2 d
             ts <- replicateM 10 (genTest c)
             return (c,ts,Nothing)
     when (verbose opts) $ printCircInfo c
@@ -157,8 +157,8 @@ evalObfuscatedCircuit fp opts λ c ts = do
     (pp, obf) <- do
         exists <- maybe (return False) fileExist dir
         if not exists || fresh opts then do
-            {-mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)-}
-            mmap <- CLT.setup (verbose opts) λ (d+2) (numIndices c) (topLevelCLTIndex c)
+            mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)
+            {-mmap <- CLT.setup (verbose opts) λ (d+2) (numIndices c) (topLevelCLTIndex c)-}
             let pp  = CLT.publicParams mmap
                 enc = cltEncode mmap (indexer c)
                 n_ev  = CLT.gs mmap !! 0
