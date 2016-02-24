@@ -49,7 +49,7 @@ newtype Index = Index {
 } deriving (Eq, Ord, Generic, NFData, Serialize)
 
 instance Show Index where
-    show = unwords . map showElem . M.toList . getIndex
+    show = unwords . map showElem . filter ((>0).snd) . M.toList . getIndex
       where
         showElem (i,p) = printf "%s^%d" (show i) p
 

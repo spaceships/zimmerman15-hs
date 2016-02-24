@@ -99,7 +99,7 @@ parseGate = do
     spaces
     opType <- oneOfStr ["ADD", "SUB", "MUL"]
     spaces
-    xref <- read <$> many1 digit
+    xref <- read <$> ((:) <$> option ' ' (char '-') <*> many1 digit)
     spaces
     yref <- read <$> many1 digit
     let op = case opType of

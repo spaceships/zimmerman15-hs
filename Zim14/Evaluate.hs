@@ -11,6 +11,7 @@ import Control.DeepSeq (NFData)
 import Data.Map ((!))
 import Data.Monoid
 import Debug.Trace
+import Text.Printf
 
 data ObfEvaluator a = ObfEvaluator {
     evMul :: a -> a -> a,
@@ -19,8 +20,9 @@ data ObfEvaluator a = ObfEvaluator {
 }
 
 eval :: (Show a, NFData a) => ObfEvaluator a -> Obfuscation a -> Circuit -> [Bool] -> IO a
-eval ev obf c xs = do
-    chat <- foldCircIO eval' c
+eval ev obf c xs | constNegation c = error "[eval] const negation"
+                 | otherwise = do
+    (chat, _) <- foldCircIO eval' c
     let z = mul ev (strictSub ev (mul ev chat zhat) (mul ev (obf!C_) what)) σ
 
     let tl   = topLevelIndex c
@@ -35,12 +37,17 @@ eval ev obf c xs = do
   where
     n = ninputs c
 
-    eval' (Input i)    [] = let b   = (xs !! i) in obf ! X_ i b
-    eval' (Const i)    [] = obf ! Y_ i
-    eval' (Mul _ _) [x,y] = mul ev x y
-    eval' (Add _ _) [x,y] = add ev obf x y
-    eval' (Sub _ _) [x,y] = sub ev obf x y
-    eval' _         _     = error "[eval] weird input"
+    eval' (Input i)    []                   = ens (obf ! X_ i (xs!!i), obf ! U_ i (xs!!i))
+    eval' (Const i)    []                   = ens (obf ! Y_ i, obf ! Y_ 0)
+    eval' (Mul _ _)    [(x, fnx), (y, fny)] = ens (mul ev x y, mul ev fnx fny)
+    eval' (Add _ _)    [(x, fnx), (y, fny)] = ens (add ev obf x y, add ev obf fnx fny)
+    eval' (Sub (-1) _) [(x, fnx)]           = ens (strictSub ev fnx x, fnx) -- < money > --
+    eval' (Sub _ _)    [(x, fnx), (y, fny)] = ens (sub ev obf x y, sub ev obf fnx fny)
+    eval' _            _                    = error "[eval] weird input"
+
+    ens (x, fnx) | indexEq (ix x) (ix fnx) = (x, fnx)
+                 | otherwise = error (printf "[ens] unequal freenot indices:\n%s\n%s\n"
+                                     (show (ix x)) (show (ix fnx)))
 
     prod = foldr1 (mul ev)
 
@@ -49,6 +56,8 @@ eval ev obf c xs = do
              ]
     zhat = prod [ obf ! Z_ i (xs!!i) | i <- [0..n-1] ]
     what = prod [ obf ! W_ i (xs!!i) | i <- [0..n-1] ]
+
+
 
 mul :: ObfEvaluator a -> Encoding a -> Encoding a -> Encoding a
 mul ev x y = Encoding ix' val'
@@ -64,9 +73,10 @@ add ev obf x y = Encoding target val'
     y' = raise ev obf target y
     val' = evAdd ev (val x') (val y')
 
-strictSub :: ObfEvaluator a -> Encoding a -> Encoding a -> Encoding a
+strictSub :: Show a => ObfEvaluator a -> Encoding a -> Encoding a -> Encoding a
 strictSub ev x y
-    | not (indexEq (ix x) (ix y)) = error "[strictSub] arguments with different indices!"
+    | not (indexEq (ix x) (ix y)) = error ("[strictSub] arguments with different indices!\n" ++
+                                           show x ++ "\n" ++ show y)
     | otherwise = Encoding (ix x) val'
   where
     val' = evSub ev (val x) (val y)
