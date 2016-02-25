@@ -24,10 +24,7 @@ import qualified Data.Map.Strict as M
 
 import Debug.Trace
 
-data Obfuscation a = Obfuscation {
-    syms :: M.Map Sym (Encoding a),
-    ones :: M.Map Ref (Encoding a)
-} deriving (Generic, NFData)
+type Obfuscation a = M.Map Sym (Encoding a)
 
 data Params = Params {
     n_ev  :: Integer,
@@ -94,9 +91,7 @@ obfuscate verbose (Params {..}) encode' c = do
         get (S_ i1 i2 b1 b2) | i1 >= i2  = error "[get] S_ undefined when i1 >= i2"
                              | otherwise = encode 1 1 (bitFill n i1 i2 b1 b2)
 
-    syms <- randIO (runGetter verbose n m get)
-    ones <- undefined
-    return (Obfuscation syms ones)
+    randIO (runGetter verbose n m get)
 
 -- runGetter takes instructions how to generate each element, generates them,
 -- them returns a big ol map of them
@@ -137,11 +132,3 @@ runGetter verbose n m get = do
     rngs <- splitRand (length actions)
     let res = pmap (uncurry evalRand) (zip actions rngs)
     return (M.fromList res)
-
-onesIndices :: Circuit -> [(Ref, Index)]
-onesIndices c = concatMap  (notGates c)
-  where
-    xindex ref i b = pow (X i b) (degree c ref (Input i))
-    yindex ref     = pow Y       (degree c ref (Const 0))
-    ix ref xs = xindex ref <> mconcat [xindex ref i (xs!!i) | i <- [0..ninputs c-1]]
-    allXs = sequence (replicate (ninputs c) [False, True])

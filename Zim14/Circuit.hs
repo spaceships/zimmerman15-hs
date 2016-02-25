@@ -74,7 +74,7 @@ degree :: Circuit -> Ref -> Op -> Int
 degree c ref z = foldCirc f ref c
   where
     f (Add _ _) [x,y] = max x y
-    f (Sub 0 _) [_,y] = y
+    f (Sub 0 _) [x]   = x
     f (Sub _ _) [x,y] = max x y
     f (Mul _ _) [x,y] = x + y
     f x _ = if eq x z then 1 else 0
@@ -87,26 +87,26 @@ degree c ref z = foldCirc f ref c
 evalMod :: (Show a, Integral a) => Circuit -> [a] -> [a] -> a -> a
 evalMod c xs ys q = foldCirc eval (outRef c) c
   where
-    eval (Add _ _)    [x,y] = x + y % q
-    eval (Sub (-1) _) [x]   = 1 - x % q -- TODO: What goes here?!
-    eval (Sub _ _)    [x,y] = x - y % q
-    eval (Mul _ _)    [x,y] = x * y % q
-    eval (Input i)    []    = xs !! i
-    eval (Const i)    []    = ys !! i
-    eval op           args  = error ("[evalMod] weird input: " ++ show op ++ " " ++ show args)
+    eval (Add _ _) [x,y] = x + y % q
+    eval (Sub 0 _) [x]   = 1 - x % q
+    eval (Sub _ _) [x,y] = x - y % q
+    eval (Mul _ _) [x,y] = x * y % q
+    eval (Input i) []    = xs !! i
+    eval (Const i) []    = ys !! i
+    eval op        args  = error ("[evalMod] weird input: " ++ show op ++ " " ++ show args)
 
 -- note: inputs are little endian: [x0, x1, ..., xn]
 plainEval :: Circuit -> [Bool] -> Bool
 plainEval c xs = foldCirc eval (outRef c) c /= 0
   where
     eval :: Op -> [Integer] -> Integer
-    eval (Add _ _)    [x,y] = x + y
-    eval (Sub (-1) _) [x]   = 1 - x
-    eval (Sub _ _)    [x,y] = x - y
-    eval (Mul _ _)    [x,y] = x * y
-    eval (Input i)    []    = b2i (xs !! i)
-    eval (Const i)    []    = fromIntegral (consts c !! i)
-    eval op           args  = error ("[plainEval] weird input: " ++ show op ++ " " ++ show args)
+    eval (Add _ _) [x,y] = x + y
+    eval (Sub 0 _) [x]   = 1 - x
+    eval (Sub _ _) [x,y] = x - y
+    eval (Mul _ _) [x,y] = x * y
+    eval (Input i) []    = b2i (xs !! i)
+    eval (Const i) []    = fromIntegral (consts c !! i)
+    eval op        args  = error ("[plainEval] weird input: " ++ show op ++ " " ++ show args)
 
 -- note: inputs are little endian: [x0, x1, ..., xn]
 plainEvalIO :: Circuit -> [Bool] -> IO Bool
@@ -115,13 +115,13 @@ plainEvalIO c xs = do
     return $ z /= 0
   where
     eval :: Op -> [Integer] -> Integer
-    eval (Add _ _)    [x,y] = x + y
-    eval (Sub (-1) _) [x]   = 1 - x
-    eval (Sub _ _)    [x,y] = x - y
-    eval (Mul _ _)    [x,y] = x * y
-    eval (Input i)    []    = b2i (xs !! i)
-    eval (Const i)    []    = fromIntegral (consts c !! i)
-    eval op           args  = error ("[plainEval] weird input: " ++ show op ++ " " ++ show args)
+    eval (Add _ _) [x,y] = x + y
+    eval (Sub 0 _) [x]   = 1 - x
+    eval (Sub _ _) [x,y] = x - y
+    eval (Mul _ _) [x,y] = x * y
+    eval (Input i) []    = b2i (xs !! i)
+    eval (Const i) []    = fromIntegral (consts c !! i)
+    eval op        args  = error ("[plainEval] weird input: " ++ show op ++ " " ++ show args)
 
 ensure :: Bool -> (Circuit -> [Bool] -> IO Bool) -> Circuit -> [TestCase] -> IO Bool
 ensure verbose eval c ts = and <$> mapM ensure' (zip [(0::Int)..] ts)
