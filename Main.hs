@@ -157,7 +157,8 @@ evalObfuscatedCircuit fp opts λ c ts = do
     (pp, obf) <- do
         exists <- maybe (return False) fileExist dir
         if not exists || fresh opts then do
-            mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)
+            {-mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)-}
+            mmap <- CLT.setup (verbose opts) (λ+d) (maximum (ydeg c : (xdegs c))) (numIndices c) (topLevelCLTIndex c)
             {-mmap <- CLT.setup (verbose opts) λ (d+2) (numIndices c) (topLevelCLTIndex c)-}
             let pp  = CLT.publicParams mmap
                 enc = cltEncode mmap (indexer c)
