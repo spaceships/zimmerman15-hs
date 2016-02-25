@@ -40,12 +40,12 @@ data Circuit = Circuit { outRef  :: Ref
 type TestCase = ([Bool], Bool)
 
 opArgs :: Op -> [Ref]
-opArgs (Add   x  y) = [x,y]
-opArgs (Sub (-1) x) = [x]
-opArgs (Sub   x  y) = [x,y]
-opArgs (Mul   x  y) = [x,y]
-opArgs (Const _)    = []
-opArgs (Input _)    = []
+opArgs (Add x y) = [x,y]
+opArgs (Sub 0 x) = [x]
+opArgs (Sub x y) = [x,y]
+opArgs (Mul x y) = [x,y]
+opArgs (Const _) = []
+opArgs (Input _) = []
 
 ninputs :: Circuit -> Int
 ninputs = M.size . inpRefs
@@ -65,18 +65,18 @@ xdegs c = pmap (degree c (outRef c) . Input) [0 .. ninputs c - 1]
 depth :: Circuit -> Int
 depth c = foldCirc f (outRef c) c
   where
-    f (Input _)    []  = 0
-    f (Const _)    []  = 0
-    f (Sub (-1) _) [x] = x
-    f _            xs  = maximum xs + 1
+    f (Input _) []  = 0
+    f (Const _) []  = 0
+    f (Sub 0 _) [x] = x
+    f _         xs  = maximum xs + 1
 
 degree :: Circuit -> Ref -> Op -> Int
 degree c ref z = foldCirc f ref c
   where
-    f (Add _ _)    [x,y] = max x y
-    f (Sub (-1) _) [x]   = x
-    f (Sub _ _)    [x,y] = max x y
-    f (Mul _ _)    [x,y] = x + y
+    f (Add _ _) [x,y] = max x y
+    f (Sub 0 _) [_,y] = y
+    f (Sub _ _) [x,y] = max x y
+    f (Mul _ _) [x,y] = x + y
     f x _ = if eq x z then 1 else 0
 
     eq (Input x) (Input y) = x == y
@@ -228,3 +228,10 @@ constNegation c = not $ all refOk (M.keys (refMap c))
         Mul x y -> notConst x || notConst y
         Input _ -> True
         Const _ -> False
+
+notGates :: Circuit -> [Ref]
+notGates c = execState (foldCircM eval (outRef c) c) []
+  where
+    eval :: Op -> Ref -> [a] -> State [Ref] ()
+    eval (Sub 0 _) ref _ = modify (ref:)
+    eval _         _   _ = return ()

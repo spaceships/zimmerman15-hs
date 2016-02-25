@@ -3,7 +3,7 @@ module Zim14.Evaluate where
 import Zim14.Circuit
 import Zim14.Encoding
 import Zim14.Index
-import Zim14.Obfuscate (Obfuscation)
+import Zim14.Obfuscate (Obfuscation (..))
 import Zim14.Sym
 import Zim14.Util (red)
 
@@ -22,8 +22,8 @@ data ObfEvaluator a = ObfEvaluator {
 eval :: (Show a, NFData a) => ObfEvaluator a -> Obfuscation a -> Circuit -> [Bool] -> IO a
 eval ev obf c xs | constNegation c = error "[eval] const negation"
                  | otherwise = do
-    (chat, _) <- foldCircIO eval' c
-    let z = mul ev (strictSub ev (mul ev chat zhat) (mul ev (obf!C_) what)) σ
+    chat <- foldCircIO eval' c
+    let z = mul ev (strictSub ev (mul ev chat zhat) (mul ev (syms obf!C_) what)) σ
 
     let tl   = topLevelIndex c
     let tl'  = ix z
@@ -37,27 +37,21 @@ eval ev obf c xs | constNegation c = error "[eval] const negation"
   where
     n = ninputs c
 
-    eval' (Input i)    []                   = ens (obf ! X_ i (xs!!i), obf ! U_ i (xs!!i))
-    eval' (Const i)    []                   = ens (obf ! Y_ i, obf ! Y_ 0)
-    eval' (Mul _ _)    [(x, fnx), (y, fny)] = ens (mul ev x y, mul ev fnx fny)
-    eval' (Add _ _)    [(x, fnx), (y, fny)] = ens (add ev obf x y, add ev obf fnx fny)
-    eval' (Sub (-1) _) [(x, fnx)]           = ens (strictSub ev fnx x, fnx) -- < money > --
-    eval' (Sub _ _)    [(x, fnx), (y, fny)] = ens (sub ev obf x y, sub ev obf fnx fny)
-    eval' _            _                    = error "[eval] weird input"
-
-    ens (x, fnx) | indexEq (ix x) (ix fnx) = (x, fnx)
-                 | otherwise = error (printf "[ens] unequal freenot indices:\n%s\n%s\n"
-                                     (show (ix x)) (show (ix fnx)))
+    eval' (Input i) []    = syms obf ! X_ i (xs !! i)
+    eval' (Const i) []    = syms obf ! Y_ i
+    eval' (Mul _ _) [x,y] = mul ev x y
+    eval' (Add _ _) [x,y] = add ev obf x y
+    eval' (Sub 0 r) [x]   = strictSub ev (ones obf ! r) x
+    eval' (Sub _ _) [x,y] = sub ev obf x y
+    eval' _         _     = error "[eval] weird input"
 
     prod = foldr1 (mul ev)
 
-    σ = prod [ obf ! S_ i1 i2 (xs!!i1) (xs!!i2)
+    σ = prod [ syms obf ! S_ i1 i2 (xs!!i1) (xs!!i2)
              | i1 <- [0..n-1], i2 <- [0..n-1], i1 < i2
              ]
-    zhat = prod [ obf ! Z_ i (xs!!i) | i <- [0..n-1] ]
-    what = prod [ obf ! W_ i (xs!!i) | i <- [0..n-1] ]
-
-
+    zhat = prod [ syms obf ! Z_ i (xs!!i) | i <- [0..n-1] ]
+    what = prod [ syms obf ! W_ i (xs!!i) | i <- [0..n-1] ]
 
 mul :: ObfEvaluator a -> Encoding a -> Encoding a -> Encoding a
 mul ev x y = Encoding ix' val'
@@ -94,6 +88,6 @@ raise :: ObfEvaluator a -> Obfuscation a -> Index -> Encoding a -> Encoding a
 raise ev obf target x = accumIndex accum diff x
   where
     diff = indexMinus target (ix x)
-    accum (X i b) = mul ev (obf!U_ i b)
-    accum Y       = mul ev (obf!V_)
+    accum (X i b) = mul ev (syms obf ! U_ i b)
+    accum Y       = mul ev (syms obf ! V_)
     accum _       = id

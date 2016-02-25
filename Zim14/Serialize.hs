@@ -2,7 +2,7 @@
 
 module Zim14.Serialize where
 
-import Zim14.Obfuscate (Obfuscation)
+import Zim14.Obfuscate (Obfuscation (..))
 
 import qualified CLT13 as CLT
 
@@ -39,7 +39,7 @@ listDirectory dir = do
 saveObfuscation :: S.Serialize a => FilePath -> Obfuscation a -> IO ()
 saveObfuscation dir obf = do
     createDirectoryIfMissing dir
-    forM_ (M.toList obf) $ \(k,v) -> do
+    forM_ (M.toList (syms obf)) $ \(k,v) -> do
         let fp = dir ++ "/" ++ show k
         BS.writeFile fp (S.encode v)
 
@@ -54,8 +54,8 @@ loadObfuscation dir = do
             case S.decode bs of
                 Left err -> error err
                 Right v  -> return (sym, v)
-    obfs' <- parallelInterleaved $ map readEnc obfs
-    return $ M.fromList obfs'
+    syms' <- M.fromList <$> (parallelInterleaved (map readEnc obfs))
+    return (Obfuscation syms' undefined)
 
 saveMMap :: FilePath -> CLT.PublicParams -> IO ()
 saveMMap dir mmap = do

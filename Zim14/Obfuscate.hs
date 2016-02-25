@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
@@ -17,11 +19,15 @@ import Control.DeepSeq (NFData)
 import Control.Monad
 import Data.Monoid
 import Text.Printf
+import GHC.Generics (Generic)
 import qualified Data.Map.Strict as M
 
 import Debug.Trace
 
-type Obfuscation a = M.Map Sym (Encoding a)
+data Obfuscation a = Obfuscation {
+    syms :: M.Map Sym (Encoding a),
+    ones :: M.Map Ref (Encoding a)
+} deriving (Generic, NFData)
 
 data Params = Params {
     n_ev  :: Integer,
@@ -88,11 +94,15 @@ obfuscate verbose (Params {..}) encode' c = do
         get (S_ i1 i2 b1 b2) | i1 >= i2  = error "[get] S_ undefined when i1 >= i2"
                              | otherwise = encode 1 1 (bitFill n i1 i2 b1 b2)
 
-    randIO (runGetter verbose n m get)
+    syms <- randIO (runGetter verbose n m get)
+    ones <- undefined
+    return (Obfuscation syms ones)
 
 -- runGetter takes instructions how to generate each element, generates them,
 -- them returns a big ol map of them
-runGetter :: NFData a => Bool -> Int -> Int -> (Sym -> Rand (Encoding a)) -> Rand (Obfuscation a)
+runGetter
+  :: NFData a => Bool -> Int -> Int -> (Sym -> Rand (Encoding a))
+  -> Rand (M.Map Sym (Encoding a))
 runGetter verbose n m get = do
     let tr = if verbose then trace else flip const
 
@@ -115,15 +125,23 @@ runGetter verbose n m get = do
              , i1 < i2
              ]
         actions =
-            tr "generating xs" xs ++
-            tr "generating us" us ++
-            tr "generating ys" ys ++
+            tr "generating xs" xs  ++
+            tr "generating us" us  ++
+            tr "generating ys" ys  ++
             tr "generating v"  [v] ++
-            tr "generating zs" zs ++
-            tr "generating ws" ws ++
+            tr "generating zs" zs  ++
+            tr "generating ws" ws  ++
             tr "generating c"  [c] ++
             tr "generating ss" ss
 
     rngs <- splitRand (length actions)
     let res = pmap (uncurry evalRand) (zip actions rngs)
     return (M.fromList res)
+
+onesIndices :: Circuit -> [(Ref, Index)]
+onesIndices c = concatMap  (notGates c)
+  where
+    xindex ref i b = pow (X i b) (degree c ref (Input i))
+    yindex ref     = pow Y       (degree c ref (Const 0))
+    ix ref xs = xindex ref <> mconcat [xindex ref i (xs!!i) | i <- [0..ninputs c-1]]
+    allXs = sequence (replicate (ninputs c) [False, True])
