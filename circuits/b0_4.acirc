@@ -1,0 +1,159 @@
+: nins 4
+: depth 12
+0 input y0 1
+1 input x0
+2 input x1
+3 input x2
+4 input x3
+5 input y1 0
+6 input y2 0
+7 input y3 0
+8 input y4 0
+9 input y5 0
+10 input y6 0
+11 input y7 0
+12 input y8 0
+13 input y9 0
+14 input y10 0
+15 input y11 0
+16 input y12 0
+17 input y13 0
+18 input y14 0
+19 input y15 0
+20 input y16 0
+21 input y17 0
+22 input y18 0
+23 input y19 0
+24 input y20 0
+25 input y21 0
+26 input y22 0
+27 input y23 0
+28 input y24 0
+29 input y25 0
+30 input y26 0
+31 input y27 0
+32 input y28 0
+33 input y29 0
+34 input y30 0
+35 input y31 0
+36 input y32 0
+37 input y33 0
+38 input y34 0
+39 input y35 0
+40 input y36 0
+41 input y37 0
+42 input y38 0
+43 input y39 0
+44 input y40 0
+45 input y41 0
+46 input y42 0
+47 input y43 0
+48 input y44 0
+49 input y45 0
+50 input y46 0
+51 input y47 0
+52 input y48 0
+53 input y49 0
+54 input y50 0
+55 input y51 0
+56 input y52 0
+57 input y53 0
+58 input y54 0
+59 input y55 0
+60 input y56 0
+61 input y57 0
+62 input y58 0
+63 input y59 0
+64 input y60 0
+65 input y61 0
+66 input y62 0
+67 input y63 0
+68 input y64 0
+69 input y65 0
+70 input y66 0
+71 input y67 0
+72 input y68 0
+73 input y69 0
+74 input y70 0
+75 input y71 0
+76 input y72 0
+77 input y73 0
+78 input y74 0
+79 input y75 0
+80 input y76 0
+81 input y77 0
+82 input y78 0
+83 input y79 0
+84 input y80 0
+85 input y81 0
+86 input y82 0
+87 input y83 0
+88 input y84 0
+89 input y85 0
+90 input y86 0
+91 input y87 0
+92 input y88 0
+93 input y89 0
+94 input y90 0
+95 input y91 0
+96 input y92 0
+97 input y93 0
+98 input y94 0
+99 input y95 0
+100 input y96 0
+101 input y97 0
+102 input y98 0
+103 input y99 0
+104 input y100 0
+105 input y101 0
+106 input y102 0
+107 input y103 0
+108 input y104 0
+109 input y105 0
+110 input y106 0
+111 input y107 0
+112 input y108 0
+113 input y109 0
+114 input y110 0
+115 input y111 0
+116 input y112 0
+117 input y113 0
+118 input y114 0
+119 input y115 0
+120 input y116 0
+121 input y117 0
+122 input y118 0
+123 input y119 0
+124 input y120 0
+125 input y121 0
+126 input y122 0
+127 input y123 0
+128 input y124 0
+129 input y125 0
+130 input y126 0
+131 input y127 0
+132 input y128 0
+133 gate SUB 0 1
+134 gate SUB 0 2
+135 gate SUB 0 3
+136 gate SUB 0 4
+137 gate SUB 0 5
+138 gate MUL 1 3
+139 gate MUL 4 138
+140 gate SUB 0 139
+141 gate MUL 135 136
+142 gate SUB 0 141
+143 gate MUL 140 142
+144 gate SUB 0 143
+145 gate MUL 2 144
+146 gate SUB 0 145
+147 gate MUL 133 134
+148 gate MUL 3 147
+149 gate SUB 0 148
+150 gate MUL 146 149
+151 gate SUB 0 150
+152 gate MUL 137 150
+153 gate SUB 0 152
+154 gate MUL 5 151
+155 gate SUB 0 154
+156 output MUL 153 155

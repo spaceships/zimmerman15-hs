@@ -2,15 +2,15 @@
 
 module Main where
 
-import Zim14.Circuit
-import Zim14.Circuit.Arbitrary
-import Zim14.Circuit.Parser
-import Zim14.Encoding.CLT13
-import Zim14.Encoding.Fake
-import Zim14.Index
-import Zim14.Obfuscate
-import Zim14.Serialize
-import Zim14.Util (pr, readBitstring, num2Bits)
+import Zim15.Circuit
+import Zim15.Circuit.Arbitrary
+import Zim15.Circuit.Parser
+import Zim15.Encoding.CLT13
+import Zim15.Encoding.Fake
+import Zim15.Index
+import Zim15.Obfuscate
+import Zim15.Serialize
+import Zim15.Util (pr, readBitstring, num2Bits)
 
 import CLT13.Rand
 import CLT13.Util (forceM)
@@ -157,8 +157,7 @@ evalObfuscatedCircuit fp opts λ c ts = do
     (pp, obf) <- do
         exists <- maybe (return False) fileExist dir
         if not exists || fresh opts then do
-            mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (topLevelCLTIndex c)
-            {-mmap <- CLT.setup (verbose opts) λ (d+2) (numIndices c) (topLevelCLTIndex c)-}
+            mmap <- CLT.setup (verbose opts) (λ+d) (getKappa c) (numIndices c) (Just 2) (topLevelCLTIndex c)
             let pp  = CLT.publicParams mmap
                 enc = cltEncode mmap (indexer c)
                 n_ev  = CLT.gs mmap !! 0
@@ -207,3 +206,4 @@ getKappa c = δ + 2*n + n*(2*n-1)
   where
     n = ninputs c
     δ = ydeg c + sum (xdegs c)
+

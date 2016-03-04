@@ -1,8 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Zim14.Serialize where
+module Zim15.Serialize where
 
-import Zim14.Obfuscate (Obfuscation)
+import Zim15.Obfuscate (Obfuscation)
 
 import qualified CLT13 as CLT
 
@@ -54,8 +54,7 @@ loadObfuscation dir = do
             case S.decode bs of
                 Left err -> error err
                 Right v  -> return (sym, v)
-    obfs' <- parallelInterleaved $ map readEnc obfs
-    return $ M.fromList obfs'
+    M.fromList <$> (parallelInterleaved (map readEnc obfs))
 
 saveMMap :: FilePath -> CLT.PublicParams -> IO ()
 saveMMap dir mmap = do

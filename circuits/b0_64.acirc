@@ -1,0 +1,753 @@
+# TEST 0000110111001101101001110101000001110110011111101101000101110110 0
+# TEST 0000100011010110010110101001010010111110000110101011010111000000 0
+# TEST 0001110100110110100001011111010111101100110010000001001001011010 0
+# TEST 1101100110110000111101100000101001001111101111001011000111010010 1
+# TEST 0010000011010110011000110001110101001100110011010010100101100011 1
+# TEST 1000110110011101010111010111100001110010110100000011011011111110 1
+# TEST 0001111100011001000111100111001100110101110000000010110100100010 1
+# TEST 0111010000000010110000111100010110101100000111111110010000101100 0
+# TEST 1110110111101001011011100010111011000000111100011000100011110100 0
+# TEST 0010111010011110000001100010010111110010010111110011000110101110 0
+: nins 64
+: depth 33
+0 input y0 1
+1 input x0
+2 input x1
+3 input x2
+4 input x3
+5 input x4
+6 input x5
+7 input x6
+8 input x7
+9 input x8
+10 input x9
+11 input x10
+12 input x11
+13 input x12
+14 input x13
+15 input x14
+16 input x15
+17 input x16
+18 input x17
+19 input x18
+20 input x19
+21 input x20
+22 input x21
+23 input x22
+24 input x23
+25 input x24
+26 input x25
+27 input x26
+28 input x27
+29 input x28
+30 input x29
+31 input x30
+32 input x31
+33 input x32
+34 input x33
+35 input x34
+36 input x35
+37 input x36
+38 input x37
+39 input x38
+40 input x39
+41 input x40
+42 input x41
+43 input x42
+44 input x43
+45 input x44
+46 input x45
+47 input x46
+48 input x47
+49 input x48
+50 input x49
+51 input x50
+52 input x51
+53 input x52
+54 input x53
+55 input x54
+56 input x55
+57 input x56
+58 input x57
+59 input x58
+60 input x59
+61 input x60
+62 input x61
+63 input x62
+64 input x63
+65 input y1 0
+66 input y2 0
+67 input y3 0
+68 input y4 0
+69 input y5 0
+70 input y6 0
+71 input y7 0
+72 input y8 0
+73 input y9 0
+74 input y10 0
+75 input y11 0
+76 input y12 0
+77 input y13 0
+78 input y14 0
+79 input y15 0
+80 input y16 0
+81 input y17 0
+82 input y18 0
+83 input y19 0
+84 input y20 0
+85 input y21 0
+86 input y22 0
+87 input y23 0
+88 input y24 0
+89 input y25 0
+90 input y26 0
+91 input y27 0
+92 input y28 0
+93 input y29 0
+94 input y30 0
+95 input y31 0
+96 input y32 0
+97 input y33 0
+98 input y34 0
+99 input y35 0
+100 input y36 0
+101 input y37 0
+102 input y38 0
+103 input y39 0
+104 input y40 0
+105 input y41 0
+106 input y42 0
+107 input y43 0
+108 input y44 0
+109 input y45 0
+110 input y46 0
+111 input y47 0
+112 input y48 0
+113 input y49 0
+114 input y50 0
+115 input y51 0
+116 input y52 0
+117 input y53 0
+118 input y54 0
+119 input y55 0
+120 input y56 0
+121 input y57 0
+122 input y58 0
+123 input y59 0
+124 input y60 0
+125 input y61 0
+126 input y62 0
+127 input y63 0
+128 input y64 0
+129 input y65 0
+130 input y66 0
+131 input y67 0
+132 input y68 0
+133 input y69 0
+134 input y70 0
+135 input y71 0
+136 input y72 0
+137 input y73 0
+138 input y74 0
+139 input y75 0
+140 input y76 0
+141 input y77 0
+142 input y78 0
+143 input y79 0
+144 input y80 0
+145 input y81 0
+146 input y82 0
+147 input y83 0
+148 input y84 0
+149 input y85 0
+150 input y86 0
+151 input y87 0
+152 input y88 0
+153 input y89 0
+154 input y90 0
+155 input y91 0
+156 input y92 0
+157 input y93 0
+158 input y94 0
+159 input y95 0
+160 input y96 0
+161 input y97 0
+162 input y98 0
+163 input y99 0
+164 input y100 0
+165 input y101 0
+166 input y102 0
+167 input y103 0
+168 input y104 0
+169 input y105 0
+170 input y106 0
+171 input y107 0
+172 input y108 0
+173 input y109 0
+174 input y110 0
+175 input y111 0
+176 input y112 0
+177 input y113 0
+178 input y114 0
+179 input y115 0
+180 input y116 0
+181 input y117 0
+182 input y118 0
+183 input y119 0
+184 input y120 0
+185 input y121 0
+186 input y122 0
+187 input y123 0
+188 input y124 0
+189 input y125 0
+190 input y126 0
+191 input y127 0
+192 input y128 0
+193 gate SUB 0 1
+194 gate SUB 0 2
+195 gate SUB 0 3
+196 gate SUB 0 4
+197 gate SUB 0 5
+198 gate SUB 0 6
+199 gate SUB 0 7
+200 gate SUB 0 8
+201 gate SUB 0 41
+202 gate SUB 0 42
+203 gate SUB 0 43
+204 gate SUB 0 44
+205 gate SUB 0 45
+206 gate SUB 0 46
+207 gate SUB 0 47
+208 gate SUB 0 48
+209 gate SUB 0 65
+210 gate MUL 6 8
+211 gate SUB 0 210
+212 gate MUL 3 200
+213 gate SUB 0 212
+214 gate MUL 5 212
+215 gate SUB 0 214
+216 gate MUL 211 215
+217 gate SUB 0 216
+218 gate MUL 7 217
+219 gate SUB 0 218
+220 gate MUL 5 6
+221 gate SUB 0 220
+222 gate MUL 197 8
+223 gate SUB 0 222
+224 gate MUL 221 223
+225 gate SUB 0 224
+226 gate MUL 195 225
+227 gate SUB 0 226
+228 gate MUL 197 198
+229 gate MUL 212 228
+230 gate SUB 0 229
+231 gate MUL 8 220
+232 gate SUB 0 231
+233 gate MUL 230 232
+234 gate MUL 227 233
+235 gate MUL 219 234
+236 gate SUB 0 235
+237 gate MUL 2 236
+238 gate SUB 0 237
+239 gate MUL 6 7
+240 gate MUL 5 239
+241 gate MUL 213 240
+242 gate SUB 0 241
+243 gate MUL 238 242
+244 gate SUB 0 243
+245 gate MUL 4 244
+246 gate SUB 0 245
+247 gate MUL 2 6
+248 gate SUB 0 247
+249 gate MUL 4 5
+250 gate MUL 198 249
+251 gate SUB 0 250
+252 gate MUL 248 251
+253 gate SUB 0 252
+254 gate MUL 195 253
+255 gate SUB 0 254
+256 gate MUL 194 3
+257 gate SUB 0 256
+258 gate MUL 228 256
+259 gate SUB 0 258
+260 gate MUL 255 259
+261 gate SUB 0 260
+262 gate MUL 8 261
+263 gate SUB 0 262
+264 gate MUL 195 6
+265 gate SUB 0 264
+266 gate MUL 200 265
+267 gate MUL 2 4
+268 gate SUB 0 267
+269 gate MUL 194 198
+270 gate SUB 0 269
+271 gate MUL 268 270
+272 gate MUL 266 271
+273 gate SUB 0 272
+274 gate MUL 194 196
+275 gate MUL 6 274
+276 gate SUB 0 275
+277 gate MUL 273 276
+278 gate SUB 0 277
+279 gate MUL 5 278
+280 gate SUB 0 279
+281 gate MUL 263 280
+282 gate SUB 0 281
+283 gate MUL 199 282
+284 gate SUB 0 283
+285 gate MUL 194 195
+286 gate SUB 0 285
+287 gate MUL 197 6
+288 gate MUL 285 287
+289 gate SUB 0 288
+290 gate MUL 195 200
+291 gate SUB 0 290
+292 gate MUL 2 291
+293 gate SUB 0 292
+294 gate MUL 239 293
+295 gate SUB 0 294
+296 gate MUL 286 295
+297 gate SUB 0 296
+298 gate MUL 197 297
+299 gate SUB 0 298
+300 gate MUL 2 3
+301 gate SUB 0 300
+302 gate MUL 8 300
+303 gate SUB 0 302
+304 gate MUL 194 5
+305 gate MUL 7 200
+306 gate MUL 304 305
+307 gate SUB 0 306
+308 gate MUL 303 307
+309 gate SUB 0 308
+310 gate MUL 198 309
+311 gate SUB 0 310
+312 gate MUL 299 311
+313 gate SUB 0 312
+314 gate MUL 196 313
+315 gate SUB 0 314
+316 gate MUL 289 315
+317 gate MUL 284 316
+318 gate MUL 246 317
+319 gate SUB 0 318
+320 gate MUL 193 319
+321 gate SUB 0 320
+322 gate MUL 1 195
+323 gate MUL 2 322
+324 gate SUB 0 323
+325 gate MUL 257 324
+326 gate SUB 0 325
+327 gate MUL 239 326
+328 gate SUB 0 327
+329 gate MUL 1 199
+330 gate SUB 0 329
+331 gate MUL 2 198
+332 gate MUL 329 331
+333 gate SUB 0 332
+334 gate MUL 328 333
+335 gate SUB 0 334
+336 gate MUL 8 335
+337 gate SUB 0 336
+338 gate MUL 6 200
+339 gate MUL 285 338
+340 gate SUB 0 339
+341 gate MUL 1 194
+342 gate MUL 200 341
+343 gate SUB 0 342
+344 gate MUL 301 343
+345 gate SUB 0 344
+346 gate MUL 199 345
+347 gate SUB 0 346
+348 gate MUL 340 347
+349 gate MUL 337 348
+350 gate SUB 0 349
+351 gate MUL 196 350
+352 gate SUB 0 351
+353 gate MUL 1 2
+354 gate MUL 6 353
+355 gate SUB 0 354
+356 gate MUL 270 355
+357 gate SUB 0 356
+358 gate MUL 195 8
+359 gate SUB 0 358
+360 gate MUL 213 359
+361 gate MUL 357 360
+362 gate SUB 0 361
+363 gate MUL 198 200
+364 gate SUB 0 363
+365 gate MUL 195 199
+366 gate MUL 363 365
+367 gate SUB 0 366
+368 gate MUL 1 3
+369 gate MUL 338 368
+370 gate SUB 0 369
+371 gate MUL 198 8
+372 gate SUB 0 371
+373 gate MUL 195 371
+374 gate SUB 0 373
+375 gate MUL 370 374
+376 gate SUB 0 375
+377 gate MUL 7 376
+378 gate SUB 0 377
+379 gate MUL 367 378
+380 gate MUL 362 379
+381 gate SUB 0 380
+382 gate MUL 4 381
+383 gate SUB 0 382
+384 gate MUL 194 7
+385 gate MUL 373 384
+386 gate SUB 0 385
+387 gate MUL 383 386
+388 gate MUL 352 387
+389 gate SUB 0 388
+390 gate MUL 197 389
+391 gate SUB 0 390
+392 gate MUL 194 363
+393 gate SUB 0 392
+394 gate MUL 3 4
+395 gate MUL 210 394
+396 gate SUB 0 395
+397 gate MUL 393 396
+398 gate SUB 0 397
+399 gate MUL 329 398
+400 gate SUB 0 399
+401 gate MUL 6 341
+402 gate SUB 0 401
+403 gate MUL 372 402
+404 gate SUB 0 403
+405 gate MUL 7 404
+406 gate SUB 0 405
+407 gate MUL 210 353
+408 gate SUB 0 407
+409 gate MUL 406 408
+410 gate SUB 0 409
+411 gate MUL 3 410
+412 gate SUB 0 411
+413 gate MUL 330 364
+414 gate SUB 0 413
+415 gate MUL 3 198
+416 gate SUB 0 415
+417 gate MUL 2 211
+418 gate MUL 416 417
+419 gate MUL 414 418
+420 gate SUB 0 419
+421 gate MUL 322 363
+422 gate SUB 0 421
+423 gate MUL 420 422
+424 gate MUL 412 423
+425 gate SUB 0 424
+426 gate MUL 196 425
+427 gate SUB 0 426
+428 gate MUL 265 416
+429 gate SUB 0 428
+430 gate MUL 7 429
+431 gate SUB 0 430
+432 gate MUL 1 415
+433 gate SUB 0 432
+434 gate MUL 431 433
+435 gate SUB 0 434
+436 gate MUL 8 435
+437 gate SUB 0 436
+438 gate MUL 7 416
+439 gate SUB 0 438
+440 gate MUL 196 265
+441 gate SUB 0 440
+442 gate MUL 1 441
+443 gate MUL 439 442
+444 gate SUB 0 443
+445 gate MUL 437 444
+446 gate SUB 0 445
+447 gate MUL 194 446
+448 gate SUB 0 447
+449 gate MUL 4 329
+450 gate MUL 210 449
+451 gate SUB 0 450
+452 gate MUL 2 195
+453 gate SUB 0 452
+454 gate MUL 1 4
+455 gate SUB 0 454
+456 gate MUL 453 455
+457 gate SUB 0 456
+458 gate MUL 199 457
+459 gate SUB 0 458
+460 gate MUL 324 459
+461 gate SUB 0 460
+462 gate MUL 363 461
+463 gate SUB 0 462
+464 gate MUL 451 463
+465 gate MUL 448 464
+466 gate MUL 427 465
+467 gate SUB 0 466
+468 gate MUL 5 467
+469 gate SUB 0 468
+470 gate MUL 400 469
+471 gate MUL 391 470
+472 gate MUL 321 471
+473 gate SUB 0 472
+474 gate MUL 203 208
+475 gate SUB 0 474
+476 gate MUL 203 206
+477 gate SUB 0 476
+478 gate MUL 48 477
+479 gate SUB 0 478
+480 gate MUL 44 479
+481 gate SUB 0 480
+482 gate MUL 475 481
+483 gate SUB 0 482
+484 gate MUL 47 483
+485 gate SUB 0 484
+486 gate MUL 204 207
+487 gate SUB 0 486
+488 gate MUL 43 206
+489 gate MUL 48 488
+490 gate MUL 486 489
+491 gate SUB 0 490
+492 gate MUL 485 491
+493 gate SUB 0 492
+494 gate MUL 45 493
+495 gate SUB 0 494
+496 gate MUL 203 48
+497 gate SUB 0 496
+498 gate MUL 46 47
+499 gate SUB 0 498
+500 gate MUL 496 499
+501 gate SUB 0 500
+502 gate MUL 204 206
+503 gate MUL 208 502
+504 gate SUB 0 503
+505 gate MUL 501 504
+506 gate SUB 0 505
+507 gate MUL 205 506
+508 gate SUB 0 507
+509 gate MUL 495 508
+510 gate SUB 0 509
+511 gate MUL 201 510
+512 gate SUB 0 511
+513 gate MUL 41 47
+514 gate SUB 0 513
+515 gate MUL 201 43
+516 gate MUL 48 515
+517 gate SUB 0 516
+518 gate MUL 514 517
+519 gate SUB 0 518
+520 gate MUL 44 519
+521 gate SUB 0 520
+522 gate MUL 41 204
+523 gate SUB 0 522
+524 gate MUL 207 523
+525 gate SUB 0 524
+526 gate MUL 474 525
+527 gate SUB 0 526
+528 gate MUL 521 527
+529 gate SUB 0 528
+530 gate MUL 205 529
+531 gate SUB 0 530
+532 gate MUL 208 486
+533 gate SUB 0 532
+534 gate MUL 44 47
+535 gate SUB 0 534
+536 gate MUL 201 534
+537 gate SUB 0 536
+538 gate MUL 533 537
+539 gate SUB 0 538
+540 gate MUL 43 539
+541 gate SUB 0 540
+542 gate MUL 208 487
+543 gate SUB 0 542
+544 gate MUL 41 535
+545 gate MUL 543 544
+546 gate SUB 0 545
+547 gate MUL 541 546
+548 gate SUB 0 547
+549 gate MUL 45 548
+550 gate SUB 0 549
+551 gate MUL 531 550
+552 gate SUB 0 551
+553 gate MUL 46 552
+554 gate SUB 0 553
+555 gate MUL 41 45
+556 gate MUL 43 47
+557 gate MUL 555 556
+558 gate MUL 502 557
+559 gate SUB 0 558
+560 gate MUL 207 476
+561 gate SUB 0 560
+562 gate MUL 43 513
+563 gate SUB 0 562
+564 gate MUL 561 563
+565 gate SUB 0 564
+566 gate MUL 44 205
+567 gate MUL 565 566
+568 gate SUB 0 567
+569 gate MUL 203 555
+570 gate MUL 486 569
+571 gate SUB 0 570
+572 gate MUL 568 571
+573 gate SUB 0 572
+574 gate MUL 48 573
+575 gate SUB 0 574
+576 gate MUL 559 575
+577 gate MUL 554 576
+578 gate MUL 512 577
+579 gate SUB 0 578
+580 gate MUL 202 579
+581 gate SUB 0 580
+582 gate MUL 208 522
+583 gate SUB 0 582
+584 gate MUL 201 203
+585 gate SUB 0 584
+586 gate MUL 583 585
+587 gate SUB 0 586
+588 gate MUL 47 587
+589 gate SUB 0 588
+590 gate MUL 207 515
+591 gate SUB 0 590
+592 gate MUL 589 591
+593 gate SUB 0 592
+594 gate MUL 205 593
+595 gate SUB 0 594
+596 gate MUL 41 203
+597 gate SUB 0 596
+598 gate MUL 208 515
+599 gate SUB 0 598
+600 gate MUL 597 599
+601 gate SUB 0 600
+602 gate MUL 204 45
+603 gate MUL 601 602
+604 gate SUB 0 603
+605 gate MUL 47 569
+606 gate SUB 0 605
+607 gate MUL 201 204
+608 gate MUL 205 607
+609 gate SUB 0 608
+610 gate MUL 606 609
+611 gate SUB 0 610
+612 gate MUL 48 611
+613 gate SUB 0 612
+614 gate MUL 604 613
+615 gate MUL 595 614
+616 gate SUB 0 615
+617 gate MUL 42 616
+618 gate SUB 0 617
+619 gate MUL 205 47
+620 gate SUB 0 619
+621 gate MUL 45 207
+622 gate SUB 0 621
+623 gate MUL 620 622
+624 gate SUB 0 623
+625 gate MUL 203 204
+626 gate MUL 623 625
+627 gate SUB 0 626
+628 gate MUL 41 43
+629 gate MUL 624 628
+630 gate SUB 0 629
+631 gate MUL 627 630
+632 gate SUB 0 631
+633 gate MUL 48 632
+634 gate SUB 0 633
+635 gate MUL 207 208
+636 gate MUL 205 635
+637 gate MUL 628 636
+638 gate SUB 0 637
+639 gate MUL 41 208
+640 gate MUL 43 639
+641 gate SUB 0 640
+642 gate MUL 201 45
+643 gate SUB 0 642
+644 gate MUL 203 207
+645 gate MUL 642 644
+646 gate SUB 0 645
+647 gate MUL 641 646
+648 gate SUB 0 647
+649 gate MUL 44 648
+650 gate SUB 0 649
+651 gate MUL 638 650
+652 gate MUL 634 651
+653 gate MUL 618 652
+654 gate SUB 0 653
+655 gate MUL 46 654
+656 gate SUB 0 655
+657 gate MUL 207 497
+658 gate SUB 0 657
+659 gate MUL 205 515
+660 gate SUB 0 659
+661 gate MUL 658 660
+662 gate SUB 0 661
+663 gate MUL 44 662
+664 gate SUB 0 663
+665 gate MUL 205 596
+666 gate SUB 0 665
+667 gate MUL 643 666
+668 gate SUB 0 667
+669 gate MUL 635 668
+670 gate SUB 0 669
+671 gate MUL 44 596
+672 gate SUB 0 671
+673 gate MUL 43 208
+674 gate MUL 205 673
+675 gate SUB 0 674
+676 gate MUL 672 675
+677 gate SUB 0 676
+678 gate MUL 47 677
+679 gate SUB 0 678
+680 gate MUL 670 679
+681 gate MUL 664 680
+682 gate SUB 0 681
+683 gate MUL 206 682
+684 gate SUB 0 683
+685 gate MUL 47 642
+686 gate SUB 0 685
+687 gate MUL 203 205
+688 gate MUL 207 687
+689 gate SUB 0 688
+690 gate MUL 686 689
+691 gate SUB 0 690
+692 gate MUL 48 691
+693 gate SUB 0 692
+694 gate MUL 206 555
+695 gate MUL 673 694
+696 gate SUB 0 695
+697 gate MUL 693 696
+698 gate SUB 0 697
+699 gate MUL 204 698
+700 gate SUB 0 699
+701 gate MUL 44 207
+702 gate MUL 639 701
+703 gate SUB 0 702
+704 gate MUL 700 703
+705 gate MUL 684 704
+706 gate SUB 0 705
+707 gate MUL 42 706
+708 gate SUB 0 707
+709 gate MUL 43 555
+710 gate MUL 701 709
+711 gate SUB 0 710
+712 gate MUL 41 206
+713 gate SUB 0 712
+714 gate MUL 643 713
+715 gate SUB 0 714
+716 gate MUL 44 715
+717 gate SUB 0 716
+718 gate MUL 47 694
+719 gate SUB 0 718
+720 gate MUL 717 719
+721 gate SUB 0 720
+722 gate MUL 474 721
+723 gate SUB 0 722
+724 gate MUL 711 723
+725 gate MUL 708 724
+726 gate MUL 656 725
+727 gate MUL 581 726
+728 gate SUB 0 727
+729 gate MUL 209 727
+730 gate SUB 0 729
+731 gate MUL 65 728
+732 gate SUB 0 731
+733 gate MUL 730 732
+734 gate SUB 0 733
+735 gate MUL 473 734
+736 gate SUB 0 735
+737 gate MUL 472 733
+738 gate SUB 0 737
+739 gate MUL 736 738
+740 output SUB 0 739

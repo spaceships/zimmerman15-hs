@@ -1,9 +1,9 @@
-module Zim14.Circuit.Parser
+module Zim15.Circuit.Parser
   ( parseCirc
   ) where
 
-import Zim14.Circuit
-import Zim14.Util (readBitstring)
+import Zim15.Circuit
+import Zim15.Util (readBitstring)
 
 import Control.Monad (when)
 import Text.Parsec hiding (spaces, parseTest)
@@ -99,7 +99,7 @@ parseGate = do
     spaces
     opType <- oneOfStr ["ADD", "SUB", "MUL"]
     spaces
-    xref <- read <$> many1 digit
+    xref <- read <$> ((:) <$> option ' ' (char '-') <*> many1 digit)
     spaces
     yref <- read <$> many1 digit
     let op = case opType of

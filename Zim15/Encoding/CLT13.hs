@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Zim14.Encoding.CLT13 where
+module Zim15.Encoding.CLT13 where
 
-import Zim14.Circuit
-import Zim14.Evaluate
-import Zim14.Index
-import Zim14.Obfuscate (Obfuscation, Encoder)
+import Zim15.Circuit
+import Zim15.Evaluate
+import Zim15.Index
+import Zim15.Obfuscate (Obfuscation, Encoder)
 
 import qualified CLT13 as CLT
 

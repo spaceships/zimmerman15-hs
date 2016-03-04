@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Zim14.Encoding where
+module Zim15.Encoding where
 
-import Zim14.Index (Index)
+import Zim15.Index (Index)
 
 import Control.DeepSeq (NFData)
 import Data.Serialize (Serialize)

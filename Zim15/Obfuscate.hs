@@ -1,14 +1,16 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
-module Zim14.Obfuscate where
+module Zim15.Obfuscate where
 
-import Zim14.Circuit
-import Zim14.Encoding
-import Zim14.Index
-import Zim14.Sym
-import Zim14.Util (b2i)
+import Zim15.Circuit
+import Zim15.Encoding
+import Zim15.Index
+import Zim15.Sym
+import Zim15.Util (b2i)
 
 import CLT13.Rand
 import CLT13.Util (pmap)
@@ -17,6 +19,7 @@ import Control.DeepSeq (NFData)
 import Control.Monad
 import Data.Monoid
 import Text.Printf
+import GHC.Generics (Generic)
 import qualified Data.Map.Strict as M
 
 import Debug.Trace
@@ -92,7 +95,9 @@ obfuscate verbose (Params {..}) encode' c = do
 
 -- runGetter takes instructions how to generate each element, generates them,
 -- them returns a big ol map of them
-runGetter :: NFData a => Bool -> Int -> Int -> (Sym -> Rand (Encoding a)) -> Rand (Obfuscation a)
+runGetter
+  :: NFData a => Bool -> Int -> Int -> (Sym -> Rand (Encoding a))
+  -> Rand (M.Map Sym (Encoding a))
 runGetter verbose n m get = do
     let tr = if verbose then trace else flip const
 
@@ -115,12 +120,12 @@ runGetter verbose n m get = do
              , i1 < i2
              ]
         actions =
-            tr "generating xs" xs ++
-            tr "generating us" us ++
-            tr "generating ys" ys ++
+            tr "generating xs" xs  ++
+            tr "generating us" us  ++
+            tr "generating ys" ys  ++
             tr "generating v"  [v] ++
-            tr "generating zs" zs ++
-            tr "generating ws" ws ++
+            tr "generating zs" zs  ++
+            tr "generating ws" ws  ++
             tr "generating c"  [c] ++
             tr "generating ss" ss
 

@@ -1,0 +1,44 @@
+name:                zimmerman15
+version:             0.1.0.0
+author:              Brent Carmer
+maintainer:          bcarmer@gmail.com
+category:            Cryptography
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable zimmerman15
+    default-language:     Haskell2010
+    main-is:              Main.hs
+    other-modules:        Zim15.Circuit
+                        , Zim15.Circuit.Arbitrary
+                        , Zim15.Circuit.Parser
+                        , Zim15.Evaluate
+                        , Zim15.Encoding
+                        , Zim15.Encoding.Fake
+                        , Zim15.Encoding.CLT13
+                        , Zim15.Index
+                        , Zim15.Obfuscate
+                        , Zim15.Serialize
+                        , Zim15.Sym
+                        , Zim15.Util
+
+    build-depends:        base >=4.8 && <4.9
+                        , bytestring
+                        , cereal
+                        , clt13
+                        , containers
+                        , deepseq
+                        , IfElse
+                        , mtl
+                        , options
+                        , parallel-io
+                        , parsec
+                        , QuickCheck
+                        , split
+                        , stm
+                        , unix
+
+    --ghc-options:        -Wall -threaded -O2 -fprof-auto "-with-rtsopts=-N4 -xc"
+    ghc-options:        -Wall -threaded -O2 -fprof-auto "-with-rtsopts=-N4"
+                        -fno-warn-unused-do-bind
+                        -fno-warn-unused-imports

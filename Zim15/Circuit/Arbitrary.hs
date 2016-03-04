@@ -1,10 +1,10 @@
-module Zim14.Circuit.Arbitrary
+module Zim15.Circuit.Arbitrary
   ( arbitraryCircuit
   )
 where
 
-import Zim14.Circuit
-import Zim14.Util (b2i)
+import Zim15.Circuit
+import Zim15.Util (b2i)
 
 import Control.Monad.State.Strict
 import Test.QuickCheck hiding (verbose)

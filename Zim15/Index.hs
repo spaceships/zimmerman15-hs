@@ -5,10 +5,10 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Zim14.Index where
+module Zim15.Index where
 
-import Zim14.Circuit
-import Zim14.Util (b2i)
+import Zim15.Circuit
+import Zim15.Util (b2i)
 
 import qualified CLT13 as CLT
 
@@ -49,7 +49,7 @@ newtype Index = Index {
 } deriving (Eq, Ord, Generic, NFData, Serialize)
 
 instance Show Index where
-    show = unwords . map showElem . M.toList . getIndex
+    show = unwords . map showElem . filter ((>0).snd) . M.toList . getIndex
       where
         showElem (i,p) = printf "%s^%d" (show i) p
 
