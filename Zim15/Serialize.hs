@@ -1,8 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Zim14.Serialize where
+module Zim15.Serialize where
 
-import Zim14.Obfuscate (Obfuscation)
+import Zim15.Obfuscate (Obfuscation)
 
 import qualified CLT13 as CLT
 

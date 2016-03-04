@@ -2,9 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Zim14.Circuit where
+module Zim15.Circuit where
 
-import Zim14.Util
+import Zim15.Util
 
 import CLT13.Util (forceM, pmap)
 

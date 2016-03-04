@@ -4,13 +4,13 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
-module Zim14.Obfuscate where
+module Zim15.Obfuscate where
 
-import Zim14.Circuit
-import Zim14.Encoding
-import Zim14.Index
-import Zim14.Sym
-import Zim14.Util (b2i)
+import Zim15.Circuit
+import Zim15.Encoding
+import Zim15.Index
+import Zim15.Sym
+import Zim15.Util (b2i)
 
 import CLT13.Rand
 import CLT13.Util (pmap)

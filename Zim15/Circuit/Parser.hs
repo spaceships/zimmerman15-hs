@@ -1,9 +1,9 @@
-module Zim14.Circuit.Parser
+module Zim15.Circuit.Parser
   ( parseCirc
   ) where
 
-import Zim14.Circuit
-import Zim14.Util (readBitstring)
+import Zim15.Circuit
+import Zim15.Util (readBitstring)
 
 import Control.Monad (when)
 import Text.Parsec hiding (spaces, parseTest)

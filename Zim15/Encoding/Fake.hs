@@ -2,12 +2,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Zim14.Encoding.Fake where
+module Zim15.Encoding.Fake where
 
-import Zim14.Circuit
-import Zim14.Evaluate
-import Zim14.Obfuscate (Obfuscation, Encoder, Params (n_ev, n_chk))
-import Zim14.Util ((%))
+import Zim15.Circuit
+import Zim15.Evaluate
+import Zim15.Obfuscate (Obfuscation, Encoder, Params (n_ev, n_chk))
+import Zim15.Util ((%))
 
 import Control.DeepSeq (NFData)
 import Data.Serialize

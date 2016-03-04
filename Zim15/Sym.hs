@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Zim14.Sym where
+module Zim15.Sym where
 
-import Zim14.Util
+import Zim15.Util
 
 import Control.DeepSeq
 import Data.List.Split (splitOn)

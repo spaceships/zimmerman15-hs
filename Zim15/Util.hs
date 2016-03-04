@@ -1,4 +1,4 @@
-module Zim14.Util where
+module Zim15.Util where
 
 import Data.Bits ((.&.))
 import System.IO
